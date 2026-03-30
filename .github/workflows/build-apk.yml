@@ -59,12 +59,17 @@ jobs:
             ccache
 
       # ── 6. Python deps ─────────────────────────────────────────────────
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.0"
+          channel: stable
+
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
           pip install flet==0.21.2
           pip install google-generativeai>=0.5.0
-          pip install buildozer cython
 
       # ── 7. Кэш Buildozer (ускоряет повторные сборки) ──────────────────
       - name: Cache Buildozer global dir
