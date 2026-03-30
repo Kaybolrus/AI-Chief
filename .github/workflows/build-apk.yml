@@ -12,7 +12,6 @@ env:
 
 jobs:
   build-apk:
-    # Используем 22.04, она часто стабильнее для сборки старых версий Python/Flet
     runs-on: ubuntu-22.04
     timeout-minutes: 40
 
@@ -36,16 +35,15 @@ jobs:
         with:
           flutter-version: "3.24.0"
           channel: stable
-          cache: true
 
       - name: Precache Flutter Android
         run: flutter precache --android
 
-      - name: Clean Environment
+      - name: Clean Temporary Files
+        # Добавили || true, чтобы шаг не падал, если папок нет
         run: |
-          sudo rm -rf /tmp/hostpython*
-          sudo rm -rf /tmp/cpython*
-          flutter clean
+          sudo rm -rf /tmp/hostpython* || true
+          sudo rm -rf /tmp/cpython* || true
 
       - name: Install Dependencies
         run: |
@@ -56,7 +54,7 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          # Упрощенный поиск и замена ключа
+          # Прямая замена в config.py
           sed -i "s|YOUR_API_KEY_HERE|${GEMINI_API_KEY}|g" config.py
           echo "API key injected: ${#GEMINI_API_KEY} chars"
 
