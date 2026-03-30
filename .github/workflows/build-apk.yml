@@ -7,10 +7,13 @@ on:
       - "v*"
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
 
     steps:
       - name: Checkout repository
@@ -35,13 +38,6 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Cache Flutter pub
-        uses: actions/cache@v4
-        with:
-          path: ~/.pub-cache
-          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: pub-${{ runner.os }}-
-
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
@@ -51,18 +47,20 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
           restore-keys: gradle-${{ runner.os }}-
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            git zip unzip libffi-dev libssl-dev \
-            pkg-config zlib1g-dev ccache
+      - name: Cache pub
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Accept Android licenses
+        run: yes | flutter doctor --android-licenses || true
 
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
-          pip install flet==0.21.2
-          pip install google-generativeai
+          pip install flet==0.21.2 google-generativeai
 
       - name: Inject Gemini API key
         env:
@@ -71,7 +69,7 @@ jobs:
           sed -i \
             "s|GEMINI_API_KEY = os.getenv(\"GEMINI_API_KEY\", \"YOUR_API_KEY_HERE\")|GEMINI_API_KEY = \"${GEMINI_API_KEY}\"|" \
             config.py
-          echo "API key injected"
+          echo "API key injected: ${#GEMINI_API_KEY} chars"
 
       - name: Build APK
         run: |
@@ -80,14 +78,14 @@ jobs:
             --org com.aichef \
             --build-version ${{ github.run_number }}
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: ai-chef-pro-build-${{ github.run_number }}
           path: build/apk/*.apk
           retention-days: 30
 
-      - name: Create GitHub Release
+      - name: Create Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
