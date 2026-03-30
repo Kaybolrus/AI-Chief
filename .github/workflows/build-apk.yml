@@ -55,7 +55,7 @@ jobs:
             autoconf automake libtool \
             pkg-config zlib1g-dev \
             libncurses5-dev libncursesw5-dev \
-            libtinfo5 \
+            libncurses6 libtinfo6 \
             ccache
 
       # ── 6. Python deps ─────────────────────────────────────────────────
