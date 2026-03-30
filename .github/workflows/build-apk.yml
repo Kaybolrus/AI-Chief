@@ -5,91 +5,66 @@ on:
     branches: [main, master]
     tags:
       - "v*"
-  pull_request:
-    branches: [main, master]
-  workflow_dispatch:          # ручной запуск из GitHub UI
+  workflow_dispatch:
 
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
 
     steps:
-      # ── 1. Код ─────────────────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ── 2. Python ──────────────────────────────────────────────────────
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
 
-      # ── 3. Java (нужна для Android SDK / Buildozer) ────────────────────
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      # ── 4. Android SDK & tools ─────────────────────────────────────────
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android build tools & platform
-        run: |
-          sdkmanager --install \
-            "platforms;android-33" \
-            "build-tools;33.0.2" \
-            "ndk;25.2.9519653" \
-            "cmake;3.22.1"
-
-      # ── 5. System deps для Buildozer ───────────────────────────────────
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            git zip unzip \
-            libffi-dev libssl-dev \
-            autoconf automake libtool \
-            pkg-config zlib1g-dev \
-            libncurses5-dev libncursesw5-dev \
-            libncurses6 libtinfo6 \
-            ccache
-
-      # ── 6. Python deps ─────────────────────────────────────────────────
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.24.0"
           channel: stable
+          cache: true
+
+      - name: Cache Flutter pub
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            git zip unzip libffi-dev libssl-dev \
+            pkg-config zlib1g-dev ccache
 
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
           pip install flet==0.21.2
-          pip install google-generativeai>=0.5.0
+          pip install google-generativeai
 
-      # ── 7. Кэш Buildozer (ускоряет повторные сборки) ──────────────────
-      - name: Cache Buildozer global dir
-        uses: actions/cache@v4
-        with:
-          path: ~/.buildozer
-          key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            buildozer-${{ runner.os }}-
-
-      - name: Cache .buildozer local dir
-        uses: actions/cache@v4
-        with:
-          path: .buildozer
-          key: buildozer-local-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            buildozer-local-${{ runner.os }}-
-
-      # ── 8. Инжект API ключа из секрета ────────────────────────────────
-      - name: Inject Gemini API key into config.py
+      - name: Inject Gemini API key
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
@@ -98,50 +73,25 @@ jobs:
             config.py
           echo "API key injected"
 
-      # ── 9. Сборка через flet build ─────────────────────────────────────
-      - name: Build APK with flet build
+      - name: Build APK
         run: |
           flet build apk \
             --project "AI Chef Pro" \
             --org com.aichef \
             --build-version ${{ github.run_number }}
-        env:
-          ANDROID_HOME: ${{ env.ANDROID_HOME }}
 
-      # ── 10. Найти и переименовать APK ──────────────────────────────────
-      - name: Locate and rename APK
-        id: find_apk
-        run: |
-          APK_PATH=$(find . -name "*.apk" | head -1)
-          echo "Found: $APK_PATH"
-
-          # Определяем имя с версией
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            VERSION="${{ github.ref_name }}"
-          else
-            VERSION="build-${{ github.run_number }}"
-          fi
-
-          DEST="ai-chef-pro-${VERSION}.apk"
-          cp "$APK_PATH" "$DEST"
-          echo "apk_path=$DEST" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      # ── 11. Загрузить APK как артефакт ─────────────────────────────────
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ai-chef-pro-apk-${{ steps.find_apk.outputs.version }}
-          path: ${{ steps.find_apk.outputs.apk_path }}
+          name: ai-chef-pro-build-${{ github.run_number }}
+          path: build/apk/*.apk
           retention-days: 30
 
-      # ── 12. Создать GitHub Release при теге ───────────────────────────
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ steps.find_apk.outputs.apk_path }}
+          files: build/apk/*.apk
           generate_release_notes: true
-          name: "AI Chef Pro ${{ steps.find_apk.outputs.version }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
