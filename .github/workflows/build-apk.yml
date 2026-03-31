@@ -78,7 +78,6 @@ jobs:
             --project "AI Chef Pro" \
             --org com.aichef \
             --build-version ${{ github.run_number }} \
-            --compile-sdk 35 \
             --verbose
 
       - name: Upload APK
