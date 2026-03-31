@@ -48,7 +48,7 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
-          pip install flet==0.25.2 google-generativeai
+          pip install flet==0.24.1 google-generativeai
 
       - name: Inject Gemini API key
         env:
