@@ -64,17 +64,6 @@ jobs:
           pip install --upgrade pip
           pip install flet==0.24.1 google-generativeai
 
-      - name: Patch wakelock_plus for Android SDK 36
-        run: |
-          WAKELOCK_DIR="$HOME/.pub-cache/hosted/pub.dev/wakelock_plus-1.4.0/android"
-          if [ -f "$WAKELOCK_DIR/build.gradle" ]; then
-            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/' "$WAKELOCK_DIR/build.gradle"
-            sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/' "$WAKELOCK_DIR/build.gradle"
-            echo "wakelock_plus patched"
-          else
-            echo "wakelock_plus build.gradle not found yet, will patch after flutter pub get"
-          fi
-
       - name: Accept Android licenses
         run: yes | flutter doctor --android-licenses || true
 
@@ -90,20 +79,30 @@ jobs:
           PYTHONUNBUFFERED: "1"
         run: |
           flutter precache --android
+
+          echo "=== First build to download Flutter dependencies ==="
+          flet build apk \
+            --project "AI Chef Pro" \
+            --org com.aichef \
+            --build-version ${{ github.run_number }} \
+            --verbose || true
+
+          echo "=== Patching wakelock_plus ==="
+          find $HOME/.pub-cache -name "build.gradle" -path "*/wakelock_plus*" -exec \
+            sed -i \
+              -e 's/compileSdkVersion flutter\.compileSdkVersion/compileSdkVersion 34/g' \
+              -e 's/targetSdkVersion flutter\.targetSdkVersion/targetSdkVersion 34/g' \
+              -e 's/minSdkVersion flutter\.minSdkVersion/minSdkVersion 21/g' \
+            {} \;
+          echo "Patched files:"
+          find $HOME/.pub-cache -name "build.gradle" -path "*/wakelock_plus*"
+
+          echo "=== Second build with patched wakelock ==="
           flet build apk \
             --project "AI Chef Pro" \
             --org com.aichef \
             --build-version ${{ github.run_number }} \
             --verbose
-
-      - name: Patch wakelock_plus after flutter pub get
-        if: failure()
-        run: |
-          find $HOME/.pub-cache -name "build.gradle" -path "*/wakelock_plus*" | while read f; do
-            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/' "$f"
-            sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/' "$f"
-            echo "Patched: $f"
-          done
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
