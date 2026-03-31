@@ -3,8 +3,6 @@ name: Build Android APK
 on:
   push:
     branches: [main, master]
-    tags:
-      - "v*"
   workflow_dispatch:
 
 env:
@@ -23,7 +21,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: 'pip'
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -52,13 +49,10 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          # Прямая замена ключа в конфиге
           sed -i "s|YOUR_API_KEY_HERE|${GEMINI_API_KEY}|g" config.py || true
-          echo "API key injected: ${#GEMINI_API_KEY} chars"
 
       - name: Create Gradle Fix Script
         run: |
-          # Этот скрипт принудительно лечит ошибки плагинов wakelock и lifecycle
           mkdir -p $HOME/.gradle/init.d
           cat <<EOF > $HOME/.gradle/init.d/fix_sdk_version.gradle
           allprojects {
@@ -80,7 +74,6 @@ jobs:
 
       - name: Build APK
         run: |
-          # Добавляем флаг --compile-sdk 35, чтобы проект соответствовал требованиям новых плагинов
           flet build apk \
             --project "AI Chef Pro" \
             --org com.aichef \
@@ -94,12 +87,3 @@ jobs:
           name: ai-chef-pro-build-${{ github.run_number }}
           path: build/apk/*.apk
           retention-days: 30
-
-      - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: build/apk/*.apk
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
