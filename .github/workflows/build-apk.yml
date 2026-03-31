@@ -41,22 +41,39 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
           restore-keys: gradle-${{ runner.os }}-
 
-      - name: Cache Python distributive
+      - name: Cache Python distributive archive
         uses: actions/cache@v4
         with:
           path: /tmp/cpython-3.11.6+20231002-x86_64-unknown-linux-gnu-install_only.tar.gz
           key: cpython-3.11.6-20231002
 
-      - name: Pre-download Python distributive
+      - name: Cache Python distributive extracted
+        uses: actions/cache@v4
+        with:
+          path: /tmp/hostpython3.11
+          key: hostpython-3.11.6-20231002
+
+      - name: Pre-download and extract Python distributive
         run: |
           FILE=/tmp/cpython-3.11.6+20231002-x86_64-unknown-linux-gnu-install_only.tar.gz
+          DIR=/tmp/hostpython3.11
+
           if [ ! -f "$FILE" ]; then
-            echo "Downloading Python distributive..."
+            echo "Downloading..."
             wget -q --show-progress \
               https://github.com/indygreg/python-build-standalone/releases/download/20231002/cpython-3.11.6+20231002-x86_64-unknown-linux-gnu-install_only.tar.gz \
               -O "$FILE"
           else
             echo "Already cached: $(du -sh $FILE)"
+          fi
+
+          if [ ! -d "$DIR" ]; then
+            echo "Extracting..."
+            mkdir -p "$DIR"
+            tar -xzf "$FILE" -C "$DIR" --strip-components=1
+            echo "Extracted: $(du -sh $DIR)"
+          else
+            echo "Already extracted: $(du -sh $DIR)"
           fi
 
       - name: Install Dependencies
