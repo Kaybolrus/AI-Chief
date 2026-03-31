@@ -101,15 +101,15 @@ jobs:
           apply plugin: 'com.android.library'
 
           android {
-              compileSdkVersion 34
+              namespace 'dev.fluttercommunity.plus.wakelock'
+              compileSdkVersion 35
               defaultConfig {
                   minSdkVersion 21
-                  targetSdkVersion 34
+                  targetSdkVersion 35
               }
           }
           EOF
-          echo "wakelock_plus patched:"
-          cat "$WAKELOCK"
+          echo "wakelock_plus patched"
 
       - name: Inject Gemini API key
         env:
