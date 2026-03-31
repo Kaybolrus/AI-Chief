@@ -1,0 +1,5 @@
+dependency_overrides:
+  wakelock_plus:
+    git:
+      url: https://github.com/fluttercommunity/wakelock_plus.git
+      ref: main
