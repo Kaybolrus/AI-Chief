@@ -67,13 +67,6 @@ jobs:
       - name: Accept Android licenses
         run: yes | flutter doctor --android-licenses || true
 
-      - name: Download Flutter packages
-        run: |
-          flutter precache --android
-          cd /tmp && flutter create temp_project --platforms android
-          cd temp_project && flutter pub add wakelock_plus:1.4.0 || true
-          cd /tmp && rm -rf temp_project
-
       - name: Inject Gemini API key
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -81,27 +74,23 @@ jobs:
           sed -i "s|YOUR_API_KEY_HERE|${GEMINI_API_KEY}|g" config.py
           echo "Injected: ${#GEMINI_API_KEY} chars"
 
+      - name: Create pubspec_overrides.yaml
+        run: |
+          cat > pubspec_overrides.yaml << 'EOF'
+          dependency_overrides:
+            wakelock_plus:
+              git:
+                url: https://github.com/fluttercommunity/wakelock_plus.git
+                ref: main
+          EOF
+          echo "pubspec_overrides.yaml created"
+          cat pubspec_overrides.yaml
+
       - name: Build APK
         env:
           PYTHONUNBUFFERED: "1"
         run: |
-          GRADLE_INIT="$HOME/.gradle/init.d/wakelock_fix.gradle"
-          mkdir -p "$HOME/.gradle/init.d"
-          cat > "$GRADLE_INIT" << 'EOF'
-          allprojects {
-              afterEvaluate { project ->
-                  if (project.hasProperty('android') && project.name == 'wakelock_plus') {
-                      project.android.compileSdkVersion 35
-                      project.android.defaultConfig.minSdkVersion 21
-                      project.android.defaultConfig.targetSdkVersion 35
-                      project.android.namespace = 'dev.fluttercommunity.plus.wakelock'
-                  }
-              }
-          }
-          EOF
-          echo "Gradle init script created:"
-          cat "$GRADLE_INIT"
-
+          flutter precache --android
           flet build apk \
             --project "AI Chef Pro" \
             --org com.aichef \
