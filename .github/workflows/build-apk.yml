@@ -28,7 +28,7 @@ jobs:
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.22.3"
+          flutter-version: "3.24.5"
           channel: stable
           cache: true
 
@@ -47,17 +47,9 @@ jobs:
           path: /tmp/cpython-3.11.6+20231002-x86_64-unknown-linux-gnu-install_only.tar.gz
           key: cpython-3.11.6-20231002
 
-      - name: Cache Python distributive extracted
-        uses: actions/cache@v4
-        with:
-          path: /tmp/hostpython3.11
-          key: hostpython-3.11.6-20231002
-
-      - name: Pre-download and extract Python distributive
+      - name: Pre-download Python distributive
         run: |
           FILE=/tmp/cpython-3.11.6+20231002-x86_64-unknown-linux-gnu-install_only.tar.gz
-          DIR=/tmp/hostpython3.11
-
           if [ ! -f "$FILE" ]; then
             echo "Downloading..."
             wget -q --show-progress \
@@ -67,19 +59,21 @@ jobs:
             echo "Already cached: $(du -sh $FILE)"
           fi
 
-          if [ ! -d "$DIR" ]; then
-            echo "Extracting..."
-            mkdir -p "$DIR"
-            tar -xzf "$FILE" -C "$DIR" --strip-components=1
-            echo "Extracted: $(du -sh $DIR)"
-          else
-            echo "Already extracted: $(du -sh $DIR)"
-          fi
-
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
           pip install flet==0.24.1 google-generativeai
+
+      - name: Patch wakelock_plus for Android SDK 36
+        run: |
+          WAKELOCK_DIR="$HOME/.pub-cache/hosted/pub.dev/wakelock_plus-1.4.0/android"
+          if [ -f "$WAKELOCK_DIR/build.gradle" ]; then
+            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/' "$WAKELOCK_DIR/build.gradle"
+            sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/' "$WAKELOCK_DIR/build.gradle"
+            echo "wakelock_plus patched"
+          else
+            echo "wakelock_plus build.gradle not found yet, will patch after flutter pub get"
+          fi
 
       - name: Accept Android licenses
         run: yes | flutter doctor --android-licenses || true
@@ -101,6 +95,15 @@ jobs:
             --org com.aichef \
             --build-version ${{ github.run_number }} \
             --verbose
+
+      - name: Patch wakelock_plus after flutter pub get
+        if: failure()
+        run: |
+          find $HOME/.pub-cache -name "build.gradle" -path "*/wakelock_plus*" | while read f; do
+            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/' "$f"
+            sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/' "$f"
+            echo "Patched: $f"
+          done
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
