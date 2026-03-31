@@ -74,18 +74,6 @@ jobs:
           cd temp_project && flutter pub add wakelock_plus:1.4.0 || true
           cd /tmp && rm -rf temp_project
 
-      - name: Patch wakelock_plus
-        run: |
-          WAKELOCK="$HOME/.pub-cache/hosted/pub.dev/wakelock_plus-1.4.0/android/build.gradle"
-          sed -i 's/compileSdkVersion flutter\.compileSdkVersion/compileSdkVersion 35/g' "$WAKELOCK"
-          sed -i 's/targetSdkVersion flutter\.targetSdkVersion/targetSdkVersion 35/g' "$WAKELOCK"
-          sed -i 's/minSdkVersion flutter\.minSdkVersion/minSdkVersion 21/g' "$WAKELOCK"
-          if ! grep -q "namespace" "$WAKELOCK"; then
-            sed -i '/^android {/a\    namespace "dev.fluttercommunity.plus.wakelock"' "$WAKELOCK"
-          fi
-          echo "Patched result:"
-          cat "$WAKELOCK"
-
       - name: Inject Gemini API key
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -97,6 +85,23 @@ jobs:
         env:
           PYTHONUNBUFFERED: "1"
         run: |
+          GRADLE_INIT="$HOME/.gradle/init.d/wakelock_fix.gradle"
+          mkdir -p "$HOME/.gradle/init.d"
+          cat > "$GRADLE_INIT" << 'EOF'
+          allprojects {
+              afterEvaluate { project ->
+                  if (project.hasProperty('android') && project.name == 'wakelock_plus') {
+                      project.android.compileSdkVersion 35
+                      project.android.defaultConfig.minSdkVersion 21
+                      project.android.defaultConfig.targetSdkVersion 35
+                      project.android.namespace = 'dev.fluttercommunity.plus.wakelock'
+                  }
+              }
+          }
+          EOF
+          echo "Gradle init script created:"
+          cat "$GRADLE_INIT"
+
           flet build apk \
             --project "AI Chef Pro" \
             --org com.aichef \
