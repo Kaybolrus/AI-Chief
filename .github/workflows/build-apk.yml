@@ -3,21 +3,27 @@ name: Build Android APK
 on:
   push:
     branches: [main, master]
+    tags:
+      - "v*"
   workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-apk:
-    runs-on: ubuntu-22.04
-    timeout-minutes: 120
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11.6
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11.6"
+          python-version: "3.11"
+          cache: 'pip'
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -30,71 +36,56 @@ jobs:
         with:
           flutter-version: "3.24.5"
           channel: stable
-          cache: true
 
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
-          restore-keys: gradle-${{ runner.os }}-
+      - name: Precache Flutter Android
+        run: flutter precache --android
 
-      - name: Cache Python distributive archive
-        uses: actions/cache@v4
-        with:
-          path: /tmp/cpython-3.11.6+20231002-x86_64-unknown-linux-gnu-install_only.tar.gz
-          key: cpython-3.11.6-20231002
-
-      - name: Pre-download Python distributive
-        run: |
-          FILE=/tmp/cpython-3.11.6+20231002-x86_64-unknown-linux-gnu-install_only.tar.gz
-          if [ ! -f "$FILE" ]; then
-            echo "Downloading..."
-            wget -q --show-progress \
-              https://github.com/indygreg/python-build-standalone/releases/download/20231002/cpython-3.11.6+20231002-x86_64-unknown-linux-gnu-install_only.tar.gz \
-              -O "$FILE"
-          else
-            echo "Already cached: $(du -sh $FILE)"
-          fi
+      - name: Accept Android licenses
+        run: yes | flutter doctor --android-licenses || true
 
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
-          pip install flet==0.24.1 google-generativeai
-
-      - name: Accept Android licenses
-        run: yes | flutter doctor --android-licenses || true
+          pip install flet==0.25.2 google-generativeai
 
       - name: Inject Gemini API key
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          sed -i "s|YOUR_API_KEY_HERE|${GEMINI_API_KEY}|g" config.py
-          echo "Injected: ${#GEMINI_API_KEY} chars"
+          # Прямая замена ключа в конфиге
+          sed -i "s|YOUR_API_KEY_HERE|${GEMINI_API_KEY}|g" config.py || true
+          echo "API key injected: ${#GEMINI_API_KEY} chars"
 
-      - name: Create pubspec_overrides.yaml
+      - name: Create Gradle Fix Script
         run: |
-          cat > pubspec_overrides.yaml << 'EOF'
-          dependency_overrides:
-            wakelock_plus:
-              git:
-                url: https://github.com/fluttercommunity/wakelock_plus.git
-                ref: main
+          # Этот скрипт принудительно лечит ошибки плагинов wakelock и lifecycle
+          mkdir -p $HOME/.gradle/init.d
+          cat <<EOF > $HOME/.gradle/init.d/fix_sdk_version.gradle
+          allprojects {
+              afterEvaluate { project ->
+                  if (project.hasProperty('android')) {
+                      project.android {
+                          compileSdkVersion 35
+                          if (project.name == 'wakelock_plus') {
+                              namespace = 'dev.fluttercommunity.plus.wakelock'
+                          }
+                          defaultConfig {
+                              targetSdkVersion 35
+                          }
+                      }
+                  }
+              }
+          }
           EOF
-          echo "pubspec_overrides.yaml created"
-          cat pubspec_overrides.yaml
 
       - name: Build APK
-        env:
-          PYTHONUNBUFFERED: "1"
         run: |
-          flutter precache --android
+          # Добавляем флаг --compile-sdk 35, чтобы проект соответствовал требованиям новых плагинов
           flet build apk \
             --project "AI Chef Pro" \
             --org com.aichef \
             --build-version ${{ github.run_number }} \
+            --compile-sdk 35 \
             --verbose
 
       - name: Upload APK
