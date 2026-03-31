@@ -3,17 +3,12 @@ name: Build Android APK
 on:
   push:
     branches: [main, master]
-    tags:
-      - "v*"
   workflow_dispatch:
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-apk:
     runs-on: ubuntu-22.04
-    timeout-minutes: 40
+    timeout-minutes: 120
 
     steps:
       - name: Checkout repository
@@ -35,34 +30,37 @@ jobs:
         with:
           flutter-version: "3.24.0"
           channel: stable
+          cache: true
 
-      - name: Precache Flutter Android
-        run: flutter precache --android
-
-      - name: Clean Temporary Files
-        # Добавили || true, чтобы шаг не падал, если папок нет
-        run: |
-          sudo rm -rf /tmp/hostpython* || true
-          sudo rm -rf /tmp/cpython* || true
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: gradle-${{ runner.os }}-
 
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
           pip install flet==0.24.1 google-generativeai
 
+      - name: Accept Android licenses
+        run: yes | flutter doctor --android-licenses || true
+
       - name: Inject Gemini API key
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          # Прямая замена в config.py
           sed -i "s|YOUR_API_KEY_HERE|${GEMINI_API_KEY}|g" config.py
-          echo "API key injected: ${#GEMINI_API_KEY} chars"
-
-      - name: Accept Android licenses
-        run: yes | flutter doctor --android-licenses || true
+          echo "Injected: ${#GEMINI_API_KEY} chars"
 
       - name: Build APK
+        env:
+          PYTHONUNBUFFERED: "1"
         run: |
+          flutter precache --android
           flet build apk \
             --project "AI Chef Pro" \
             --org com.aichef \
