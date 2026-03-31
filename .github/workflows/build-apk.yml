@@ -67,6 +67,50 @@ jobs:
       - name: Accept Android licenses
         run: yes | flutter doctor --android-licenses || true
 
+      - name: Download Flutter packages
+        run: |
+          flutter precache --android
+          cd /tmp && flutter create temp_project --platforms android
+          cd temp_project && flutter pub add wakelock_plus:1.4.0 || true
+          cd /tmp && rm -rf temp_project
+
+      - name: Patch wakelock_plus
+        run: |
+          WAKELOCK="$HOME/.pub-cache/hosted/pub.dev/wakelock_plus-1.4.0/android/build.gradle"
+          cat > "$WAKELOCK" << 'EOF'
+          group 'dev.fluttercommunity.plus.wakelock'
+          version '1.0'
+
+          buildscript {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:7.3.0'
+              }
+          }
+
+          rootProject.allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+
+          apply plugin: 'com.android.library'
+
+          android {
+              compileSdkVersion 34
+              defaultConfig {
+                  minSdkVersion 21
+                  targetSdkVersion 34
+              }
+          }
+          EOF
+          echo "wakelock_plus patched:"
+          cat "$WAKELOCK"
+
       - name: Inject Gemini API key
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -78,26 +122,6 @@ jobs:
         env:
           PYTHONUNBUFFERED: "1"
         run: |
-          flutter precache --android
-
-          echo "=== First build to download Flutter dependencies ==="
-          flet build apk \
-            --project "AI Chef Pro" \
-            --org com.aichef \
-            --build-version ${{ github.run_number }} \
-            --verbose || true
-
-          echo "=== Patching wakelock_plus ==="
-          find $HOME/.pub-cache -name "build.gradle" -path "*/wakelock_plus*" -exec \
-            sed -i \
-              -e 's/compileSdkVersion flutter\.compileSdkVersion/compileSdkVersion 34/g' \
-              -e 's/targetSdkVersion flutter\.targetSdkVersion/targetSdkVersion 34/g' \
-              -e 's/minSdkVersion flutter\.minSdkVersion/minSdkVersion 21/g' \
-            {} \;
-          echo "Patched files:"
-          find $HOME/.pub-cache -name "build.gradle" -path "*/wakelock_plus*"
-
-          echo "=== Second build with patched wakelock ==="
           flet build apk \
             --project "AI Chef Pro" \
             --org com.aichef \
