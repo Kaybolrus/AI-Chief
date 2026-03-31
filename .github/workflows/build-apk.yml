@@ -77,39 +77,14 @@ jobs:
       - name: Patch wakelock_plus
         run: |
           WAKELOCK="$HOME/.pub-cache/hosted/pub.dev/wakelock_plus-1.4.0/android/build.gradle"
-          cat > "$WAKELOCK" << 'EOF'
-          group 'dev.fluttercommunity.plus.wakelock'
-          version '1.0'
-
-          buildscript {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-              dependencies {
-                  classpath 'com.android.tools.build:gradle:7.3.0'
-              }
-          }
-
-          rootProject.allprojects {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-
-          apply plugin: 'com.android.library'
-
-          android {
-              namespace 'dev.fluttercommunity.plus.wakelock'
-              compileSdkVersion 35
-              defaultConfig {
-                  minSdkVersion 21
-                  targetSdkVersion 35
-              }
-          }
-          EOF
-          echo "wakelock_plus patched"
+          sed -i 's/compileSdkVersion flutter\.compileSdkVersion/compileSdkVersion 35/g' "$WAKELOCK"
+          sed -i 's/targetSdkVersion flutter\.targetSdkVersion/targetSdkVersion 35/g' "$WAKELOCK"
+          sed -i 's/minSdkVersion flutter\.minSdkVersion/minSdkVersion 21/g' "$WAKELOCK"
+          if ! grep -q "namespace" "$WAKELOCK"; then
+            sed -i '/^android {/a\    namespace "dev.fluttercommunity.plus.wakelock"' "$WAKELOCK"
+          fi
+          echo "Patched result:"
+          cat "$WAKELOCK"
 
       - name: Inject Gemini API key
         env:
