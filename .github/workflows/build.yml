@@ -1,0 +1,25 @@
+
+name: Build APK
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install flet google-generativeai flet-cli
+      - run: flet build apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: build/apk/*.apk
