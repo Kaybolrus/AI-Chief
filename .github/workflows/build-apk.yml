@@ -155,12 +155,14 @@ jobs:
         env:
           PYTHONUNBUFFERED: "1"
         run: |
-          python3 /tmp/patch_wakelock.py
           flet build apk \
             --project "AI Chef Pro" \
             --org com.aichef \
             --build-version ${{ github.run_number }} \
-            --verbose
+            --verbose || true
+          python3 fix_gradle.py
+          cd $(find /tmp -name "android" -path "*/flet_flutter*" 2>/dev/null | head -1)/..
+          flutter build apk --build-name ${{ github.run_number }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
