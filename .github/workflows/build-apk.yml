@@ -121,16 +121,89 @@ jobs:
             cat "$WAKELOCK"
           fi
 
-      - name: Build APK
+- name: Build APK
         env:
           PYTHONUNBUFFERED: "1"
         run: |
+          # Патчим wakelock в pub-cache
+          WAKELOCK=$(find $HOME/.pub-cache -name "build.gradle" -path "*/wakelock_plus*" | grep -v example | head -1)
+          if [ -n "$WAKELOCK" ]; then
+            cat > "$WAKELOCK" << 'GRADLE'
+group 'dev.fluttercommunity.plus.wakelock'
+version '1.0'
+buildscript {
+    repositories { google(); mavenCentral() }
+    dependencies { classpath 'com.android.tools.build:gradle:7.3.0' }
+}
+rootProject.allprojects {
+    repositories { google(); mavenCentral() }
+}
+apply plugin: 'com.android.library'
+android {
+    namespace 'dev.fluttercommunity.plus.wakelock'
+    compileSdkVersion 35
+    sourceSets { main.java.srcDirs += 'src/main/kotlin' }
+    defaultConfig { minSdkVersion 21; targetSdkVersion 35 }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+dependencies { implementation 'androidx.annotation:annotation:1.1.0' }
+GRADLE
+            echo "Patched wakelock: $WAKELOCK"
+          fi
+
+          # Первый запуск — скачает зависимости и упадёт
+          flet build apk \
+            --project "AI Chef Pro" \
+            --org com.aichef \
+            --build-version ${{ github.run_number }} \
+            --verbose || true
+
+          # Патчим app/build.gradle временного проекта
+          APP_GRADLE=$(find /tmp -name "build.gradle" -path "*/android/app/*" 2>/dev/null | head -1)
+          if [ -n "$APP_GRADLE" ]; then
+            echo "Patching app gradle: $APP_GRADLE"
+            sed -i 's/compileSdkVersion 34/compileSdkVersion 35/' "$APP_GRADLE"
+            sed -i 's/compileSdk = 34/compileSdk = 35/' "$APP_GRADLE"
+            echo "App gradle patched"
+          fi
+
+          # Патчим wakelock в tmp
+          find /tmp -name "build.gradle" -path "*/wakelock_plus*" 2>/dev/null | grep -v example | while read f; do
+            cat > "$f" << 'GRADLE2'
+group 'dev.fluttercommunity.plus.wakelock'
+version '1.0'
+buildscript {
+    repositories { google(); mavenCentral() }
+    dependencies { classpath 'com.android.tools.build:gradle:7.3.0' }
+}
+rootProject.allprojects {
+    repositories { google(); mavenCentral() }
+}
+apply plugin: 'com.android.library'
+android {
+    namespace 'dev.fluttercommunity.plus.wakelock'
+    compileSdkVersion 35
+    sourceSets { main.java.srcDirs += 'src/main/kotlin' }
+    defaultConfig { minSdkVersion 21; targetSdkVersion 35 }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+dependencies { implementation 'androidx.annotation:annotation:1.1.0' }
+GRADLE2
+            echo "Patched tmp wakelock: $f"
+          done
+
+          # Второй запуск с пропатченными файлами
           flet build apk \
             --project "AI Chef Pro" \
             --org com.aichef \
             --build-version ${{ github.run_number }} \
             --verbose
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
