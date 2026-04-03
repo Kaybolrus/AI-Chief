@@ -34,28 +34,15 @@ jobs:
           flutter-version: "3.24.5"
           channel: stable
 
-      - name: Create Gradle fix script
-        run: |
-          mkdir -p $HOME/.gradle/init.d
-          cat > $HOME/.gradle/init.d/fix_sdk.gradle << 'GRADLE'
-          allprojects {
-              afterEvaluate { project ->
-                  if (project.hasProperty('android')) {
-                      try {
-                          project.android.compileSdkVersion 35
-                      } catch (Exception e) {}
-                      try {
-                          project.android.defaultConfig.targetSdkVersion 35
-                      } catch (Exception e) {}
-                      if (project.name == 'wakelock_plus') {
-                          try {
-                              project.android.namespace = 'dev.fluttercommunity.plus.wakelock'
-                          } catch (Exception e) {}
-                      }
-                  }
-              }
-          }
-          GRADLE
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: gradle-${{ runner.os }}-
+
       - name: Cache Python distributive
         uses: actions/cache@v4
         with:
@@ -91,33 +78,57 @@ jobs:
           sed -i "s|YOUR_API_KEY_HERE|${GEMINI_API_KEY}|g" config.py
           echo "Injected: ${#GEMINI_API_KEY} chars"
 
-      - name: Create Gradle fix script
-        run: |
-          mkdir -p $HOME/.gradle/init.d
-          cat > $HOME/.gradle/init.d/fix_sdk.gradle << 'GRADLE'
-          allprojects {
-              afterEvaluate { project ->
-                  if (project.hasProperty('android')) {
-                      project.android {
-                          compileSdkVersion 35
-                          if (project.name == 'wakelock_plus') {
-                              namespace = 'dev.fluttercommunity.plus.wakelock'
-                          }
-                          defaultConfig {
-                              if (defaultConfig.targetSdkVersion == null || defaultConfig.targetSdkVersion < 35) {
-                                  targetSdkVersion 35
-                              }
-                          }
-                      }
-                  }
-              }
-          }
-          GRADLE
+      - name: Remove old Gradle init scripts
+        run: rm -f $HOME/.gradle/init.d/*.gradle || true
 
-      - name: Build APK
+      - name: Patch wakelock_plus and build APK
         env:
           PYTHONUNBUFFERED: "1"
         run: |
+          # Скачиваем wakelock в pub-cache если ещё нет
+          flutter pub cache repair || true
+
+          # Патчим через Python
+          python3 << 'PYEOF'
+          import os, re, glob
+
+          pattern = os.path.expanduser(
+              "~/.pub-cache/hosted/pub.dev/wakelock_plus-*/android/build.gradle"
+          )
+          files = glob.glob(pattern)
+
+          for path in files:
+              with open(path) as f:
+                  content = f.read()
+
+              content = re.sub(
+                  r'compileSdkVersion\s+flutter\.compileSdkVersion',
+                  'compileSdkVersion 35', content
+              )
+              content = re.sub(
+                  r'targetSdkVersion\s+flutter\.targetSdkVersion',
+                  'targetSdkVersion 35', content
+              )
+              content = re.sub(
+                  r'minSdkVersion\s+flutter\.minSdkVersion',
+                  'minSdkVersion 21', content
+              )
+              if 'namespace' not in content:
+                  content = content.replace(
+                      'android {',
+                      'android {\n    namespace "dev.fluttercommunity.plus.wakelock"',
+                      1
+                  )
+
+              with open(path, 'w') as f:
+                  f.write(content)
+              print(f"Patched: {path}")
+
+          if not files:
+              print("wakelock_plus not in pub-cache yet, will patch after flutter pub get")
+          PYEOF
+
+          # Сборка APK
           flet build apk \
             --project "AI Chef Pro" \
             --org com.aichef \
