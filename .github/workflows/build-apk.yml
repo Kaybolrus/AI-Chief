@@ -90,71 +90,36 @@ jobs:
           flutter pub get 2>/dev/null || true
           cd /tmp && rm -rf fix_wakelock
 
-          python3 << 'PYEOF'
-          import os, glob
+          WAKELOCK=$(find $HOME/.pub-cache -name "build.gradle" -path "*/wakelock_plus*" | head -1)
+          echo "Found: $WAKELOCK"
 
-          pattern = os.path.expanduser(
-              "~/.pub-cache/hosted/pub.dev/wakelock_plus-*/android/build.gradle"
-          )
-          files = glob.glob(pattern)
-          print(f"Found {len(files)} files")
-
-          for path in files:
-              new_content = """group 'dev.fluttercommunity.plus.wakelock'
-version '1.0'
-
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:7.3.0'
-    }
-}
-
-rootProject.allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-
-apply plugin: 'com.android.library'
-
-android {
-    namespace 'dev.fluttercommunity.plus.wakelock'
-    compileSdkVersion 35
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
-    }
-    defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 35
-    }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-    kotlinOptions {
-        jvmTarget = '1.8'
-    }
-}
-
-dependencies {
-    implementation 'androidx.annotation:annotation:1.1.0'
-}
-"""
-              with open(path, 'w') as f:
-                  f.write(new_content)
-              print(f"Replaced: {path}")
-
-              # Проверяем исходники
-              for root, dirs, fs in os.walk(os.path.dirname(path)):
-                  for f in fs:
-                      if f.endswith('.kt') or f.endswith('.java'):
-                          print(f"Source: {os.path.join(root, f)}")
-          PYEOF
+          if [ -n "$WAKELOCK" ]; then
+            cat > "$WAKELOCK" << 'GRADLE'
+          group 'dev.fluttercommunity.plus.wakelock'
+          version '1.0'
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:7.3.0' }
+          }
+          rootProject.allprojects {
+              repositories { google(); mavenCentral() }
+          }
+          apply plugin: 'com.android.library'
+          android {
+              namespace 'dev.fluttercommunity.plus.wakelock'
+              compileSdkVersion 35
+              sourceSets { main.java.srcDirs += 'src/main/kotlin' }
+              defaultConfig { minSdkVersion 21; targetSdkVersion 35 }
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_1_8
+                  targetCompatibility JavaVersion.VERSION_1_8
+              }
+          }
+          dependencies { implementation 'androidx.annotation:annotation:1.1.0' }
+          GRADLE
+            echo "Patched: $WAKELOCK"
+            cat "$WAKELOCK"
+          fi
 
       - name: Build APK
         env:
