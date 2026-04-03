@@ -91,42 +91,64 @@ jobs:
           cd /tmp && rm -rf fix_wakelock
 
           python3 << 'PYEOF'
-          import os, re, glob
+          import os, glob
 
           pattern = os.path.expanduser(
               "~/.pub-cache/hosted/pub.dev/wakelock_plus-*/android/build.gradle"
           )
           files = glob.glob(pattern)
-          print(f"Found {len(files)} files: {files}")
+          print(f"Found {len(files)} files")
 
           for path in files:
               with open(path) as f:
                   content = f.read()
+              print(f"=== CONTENT OF {path} ===")
+              print(content)
+              print("=== END ===")
 
-              content = re.sub(
-                  r'compileSdkVersion\s+flutter\.compileSdkVersion',
-                  'compileSdkVersion 35', content
-              )
-              content = re.sub(
-                  r'targetSdkVersion\s+flutter\.targetSdkVersion',
-                  'targetSdkVersion 35', content
-              )
-              content = re.sub(
-                  r'minSdkVersion\s+flutter\.minSdkVersion',
-                  'minSdkVersion 21', content
-              )
-              if 'namespace' not in content:
-                  content = content.replace(
-                      'android {',
-                      'android {\n    namespace "dev.fluttercommunity.plus.wakelock"',
-                      1
-                  )
+              # Заменяем весь файл целиком
+              new_content = '''group 'dev.fluttercommunity.plus.wakelock'
+          version '1.0'
 
+          buildscript {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:7.3.0'
+              }
+          }
+
+          rootProject.allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+
+          apply plugin: 'com.android.library'
+
+          android {
+              namespace 'dev.fluttercommunity.plus.wakelock'
+              compileSdkVersion 35
+              sourceSets {
+                  main.java.srcDirs += 'src/main/kotlin'
+              }
+              defaultConfig {
+                  minSdkVersion 21
+                  targetSdkVersion 35
+              }
+          }
+
+          dependencies {
+              implementation 'androidx.annotation:annotation:1.1.0'
+          }
+          '''
               with open(path, 'w') as f:
-                  f.write(content)
-              print(f"Patched: {path}")
+                  f.write(new_content)
+              print(f"Replaced: {path}")
           PYEOF
-
       - name: Build APK
         env:
           PYTHONUNBUFFERED: "1"
