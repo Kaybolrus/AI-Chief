@@ -81,14 +81,15 @@ jobs:
       - name: Remove old Gradle init scripts
         run: rm -f $HOME/.gradle/init.d/*.gradle || true
 
-      - name: Patch wakelock_plus and build APK
-        env:
-          PYTHONUNBUFFERED: "1"
+      - name: Force download and patch wakelock_plus
         run: |
-          # Скачиваем wakelock в pub-cache если ещё нет
-          flutter pub cache repair || true
+          cd /tmp
+          flutter create --platforms android fix_wakelock
+          cd fix_wakelock
+          flutter pub add wakelock_plus:1.4.0 2>/dev/null || true
+          flutter pub get 2>/dev/null || true
+          cd /tmp && rm -rf fix_wakelock
 
-          # Патчим через Python
           python3 << 'PYEOF'
           import os, re, glob
 
@@ -96,6 +97,7 @@ jobs:
               "~/.pub-cache/hosted/pub.dev/wakelock_plus-*/android/build.gradle"
           )
           files = glob.glob(pattern)
+          print(f"Found {len(files)} files: {files}")
 
           for path in files:
               with open(path) as f:
@@ -123,12 +125,12 @@ jobs:
               with open(path, 'w') as f:
                   f.write(content)
               print(f"Patched: {path}")
-
-          if not files:
-              print("wakelock_plus not in pub-cache yet, will patch after flutter pub get")
           PYEOF
 
-          # Сборка APK
+      - name: Build APK
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: |
           flet build apk \
             --project "AI Chef Pro" \
             --org com.aichef \
