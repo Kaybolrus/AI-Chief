@@ -11,7 +11,7 @@ env:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
@@ -81,21 +81,12 @@ jobs:
       - name: Remove old Gradle init scripts
         run: rm -f $HOME/.gradle/init.d/*.gradle || true
 
-      - name: Force download and patch wakelock_plus
+      - name: Create patch script
         run: |
-          cd /tmp
-          flutter create --platforms android fix_wakelock
-          cd fix_wakelock
-          flutter pub add wakelock_plus:1.4.0 2>/dev/null || true
-          flutter pub get 2>/dev/null || true
-          cd /tmp && rm -rf fix_wakelock
+          cat > /tmp/patch_wakelock.py << 'PYEOF'
+          import os, glob
 
-          WAKELOCK=$(find $HOME/.pub-cache -name "build.gradle" -path "*/wakelock_plus*" | head -1)
-          echo "Found: $WAKELOCK"
-
-          if [ -n "$WAKELOCK" ]; then
-            cat > "$WAKELOCK" << 'GRADLE'
-          group 'dev.fluttercommunity.plus.wakelock'
+          CONTENT = """group 'dev.fluttercommunity.plus.wakelock'
           version '1.0'
           buildscript {
               repositories { google(); mavenCentral() }
@@ -116,94 +107,61 @@ jobs:
               }
           }
           dependencies { implementation 'androidx.annotation:annotation:1.1.0' }
-          GRADLE
-            echo "Patched: $WAKELOCK"
-            cat "$WAKELOCK"
-          fi
+          """
 
-- name: Build APK
-        env:
-          PYTHONUNBUFFERED: "1"
+          dirs = [
+              os.path.expanduser("~/.pub-cache"),
+              "/tmp"
+          ]
+          patched = 0
+          for d in dirs:
+              for path in glob.glob(f"{d}/**/wakelock_plus*/android/build.gradle", recursive=True):
+                  if "example" in path:
+                      continue
+                  with open(path, "w") as f:
+                      f.write(CONTENT)
+                  print(f"Patched: {path}")
+                  patched += 1
+          print(f"Total patched: {patched}")
+          PYEOF
+          echo "Patch script created"
+
+      - name: Force download wakelock to pub-cache
         run: |
-          # Патчим wakelock в pub-cache
-          WAKELOCK=$(find $HOME/.pub-cache -name "build.gradle" -path "*/wakelock_plus*" | grep -v example | head -1)
-          if [ -n "$WAKELOCK" ]; then
-            cat > "$WAKELOCK" << 'GRADLE'
-group 'dev.fluttercommunity.plus.wakelock'
-version '1.0'
-buildscript {
-    repositories { google(); mavenCentral() }
-    dependencies { classpath 'com.android.tools.build:gradle:7.3.0' }
-}
-rootProject.allprojects {
-    repositories { google(); mavenCentral() }
-}
-apply plugin: 'com.android.library'
-android {
-    namespace 'dev.fluttercommunity.plus.wakelock'
-    compileSdkVersion 35
-    sourceSets { main.java.srcDirs += 'src/main/kotlin' }
-    defaultConfig { minSdkVersion 21; targetSdkVersion 35 }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-}
-dependencies { implementation 'androidx.annotation:annotation:1.1.0' }
-GRADLE
-            echo "Patched wakelock: $WAKELOCK"
-          fi
+          cd /tmp
+          flutter create --platforms android fix_wakelock 2>/dev/null
+          cd fix_wakelock
+          flutter pub add wakelock_plus:1.4.0 2>/dev/null || true
+          flutter pub get 2>/dev/null || true
+          cd /tmp && rm -rf fix_wakelock
+          python3 /tmp/patch_wakelock.py
 
-          # Первый запуск — скачает зависимости и упадёт
+      - name: First build pass to get Flutter project structure
+        run: |
           flet build apk \
             --project "AI Chef Pro" \
             --org com.aichef \
             --build-version ${{ github.run_number }} \
             --verbose || true
-
-          # Патчим app/build.gradle временного проекта
-          APP_GRADLE=$(find /tmp -name "build.gradle" -path "*/android/app/*" 2>/dev/null | head -1)
+          python3 /tmp/patch_wakelock.py
+          APP_GRADLE=$(find /tmp -name "build.gradle" -path "*/android/app/build.gradle" 2>/dev/null | head -1)
           if [ -n "$APP_GRADLE" ]; then
-            echo "Patching app gradle: $APP_GRADLE"
-            sed -i 's/compileSdkVersion 34/compileSdkVersion 35/' "$APP_GRADLE"
-            sed -i 's/compileSdk = 34/compileSdk = 35/' "$APP_GRADLE"
-            echo "App gradle patched"
+            sed -i 's/compileSdkVersion 34/compileSdkVersion 35/g' "$APP_GRADLE"
+            sed -i 's/compileSdk = 34/compileSdk = 35/g' "$APP_GRADLE"
+            echo "App build.gradle patched: $APP_GRADLE"
           fi
 
-          # Патчим wakelock в tmp
-          find /tmp -name "build.gradle" -path "*/wakelock_plus*" 2>/dev/null | grep -v example | while read f; do
-            cat > "$f" << 'GRADLE2'
-group 'dev.fluttercommunity.plus.wakelock'
-version '1.0'
-buildscript {
-    repositories { google(); mavenCentral() }
-    dependencies { classpath 'com.android.tools.build:gradle:7.3.0' }
-}
-rootProject.allprojects {
-    repositories { google(); mavenCentral() }
-}
-apply plugin: 'com.android.library'
-android {
-    namespace 'dev.fluttercommunity.plus.wakelock'
-    compileSdkVersion 35
-    sourceSets { main.java.srcDirs += 'src/main/kotlin' }
-    defaultConfig { minSdkVersion 21; targetSdkVersion 35 }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-}
-dependencies { implementation 'androidx.annotation:annotation:1.1.0' }
-GRADLE2
-            echo "Patched tmp wakelock: $f"
-          done
-
-          # Второй запуск с пропатченными файлами
+      - name: Build APK final
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: |
+          python3 /tmp/patch_wakelock.py
           flet build apk \
             --project "AI Chef Pro" \
             --org com.aichef \
             --build-version ${{ github.run_number }} \
             --verbose
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
