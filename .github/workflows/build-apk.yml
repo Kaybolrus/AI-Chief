@@ -34,25 +34,14 @@ jobs:
           flutter-version: "3.24.5"
           channel: stable
 
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
-          restore-keys: gradle-${{ runner.os }}-
-
-      - name: Precache Flutter Android
-        run: flutter precache --android
-
-      - name: Accept Android licenses
-        run: yes | flutter doctor --android-licenses || true
-
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
           pip install flet --upgrade
+          echo "Flet version: $(flet --version)"
+
+      - name: Accept Android licenses
+        run: yes | flutter doctor --android-licenses || true
 
       - name: Inject Gemini API key
         env:
@@ -60,7 +49,6 @@ jobs:
         run: |
           sed -i "s|YOUR_API_KEY_HERE|${GEMINI_API_KEY}|g" config.py || true
           echo "Injected: ${#GEMINI_API_KEY} chars"
-          flet --version
 
       - name: Remove Gradle init scripts
         run: rm -f $HOME/.gradle/init.d/*.gradle || true
