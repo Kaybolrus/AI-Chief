@@ -31,17 +31,17 @@ jobs:
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.5"
+          flutter-version: "3.41.4"
           channel: stable
+
+      - name: Accept Android licenses
+        run: yes | flutter doctor --android-licenses || true
 
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
           pip install flet --upgrade
           echo "Flet version: $(flet --version)"
-
-      - name: Accept Android licenses
-        run: yes | flutter doctor --android-licenses || true
 
       - name: Inject Gemini API key
         env:
