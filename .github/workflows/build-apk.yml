@@ -58,11 +58,11 @@ jobs:
           PYTHONUNBUFFERED: "1"
         run: |
           rm -rf build
-          pip install -r requirements.txt
           flet build apk \
             --project "AI Chef Pro" \
             --org com.aichef \
             --build-version ${{ github.run_number }} \
+            --include-packages flet certifi \
             --verbose
             
       - name: Upload APK
