@@ -58,12 +58,13 @@ jobs:
           PYTHONUNBUFFERED: "1"
         run: |
           rm -rf build
+          pip install -r requirements.txt
           flet build apk \
             --project "AI Chef Pro" \
             --org com.aichef \
             --build-version ${{ github.run_number }} \
             --verbose
-
+            
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
