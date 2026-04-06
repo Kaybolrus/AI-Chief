@@ -17,7 +17,6 @@ def main(page: ft.Page):
             color_scheme=ft.ColorScheme(
                 primary="#D97706",
                 secondary="#92400e",
-                background="#0c0c0c",
                 surface="#141414",
                 on_primary="#0c0c0c",
             )
