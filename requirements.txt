@@ -1,2 +1,1 @@
-flet-core==0.24.1
 certifi
