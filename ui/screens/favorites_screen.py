@@ -99,7 +99,7 @@ class FavoritesScreen(ft.Column):
         self.page.update()
         fp.pick_files(allowed_extensions=["json", "chef"])
 
-    def _on_file_picked(self, e: ft.FilePickerUploadEvent):
+    def _on_file_picked(self, e):
         if not e.files:
             return
         path = e.files[0].path
