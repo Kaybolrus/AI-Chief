@@ -43,23 +43,6 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
           restore-keys: gradle-${{ runner.os }}-
 
-      - name: Cache Python distributive
-        uses: actions/cache@v4
-        with:
-          path: /tmp/cpython-3.11.6+20231002-x86_64-unknown-linux-gnu-install_only.tar.gz
-          key: cpython-3.11.6-20231002
-
-      - name: Pre-download Python distributive
-        run: |
-          FILE=/tmp/cpython-3.11.6+20231002-x86_64-unknown-linux-gnu-install_only.tar.gz
-          if [ ! -f "$FILE" ]; then
-            wget -q --show-progress \
-              https://github.com/indygreg/python-build-standalone/releases/download/20231002/cpython-3.11.6+20231002-x86_64-unknown-linux-gnu-install_only.tar.gz \
-              -O "$FILE"
-          else
-            echo "Cached: $(du -sh $FILE)"
-          fi
-
       - name: Precache Flutter Android
         run: flutter precache --android
 
@@ -69,7 +52,7 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
-          pip install flet==0.24.1
+          pip install flet --upgrade
 
       - name: Inject Gemini API key
         env:
@@ -77,8 +60,9 @@ jobs:
         run: |
           sed -i "s|YOUR_API_KEY_HERE|${GEMINI_API_KEY}|g" config.py || true
           echo "Injected: ${#GEMINI_API_KEY} chars"
+          flet --version
 
-      - name: Remove old Gradle init scripts
+      - name: Remove Gradle init scripts
         run: rm -f $HOME/.gradle/init.d/*.gradle || true
 
       - name: Build APK
@@ -90,7 +74,6 @@ jobs:
             --project "AI Chef Pro" \
             --org com.aichef \
             --build-version ${{ github.run_number }} \
-            --android-sdk-version 35 \
             --verbose
 
       - name: Upload APK
