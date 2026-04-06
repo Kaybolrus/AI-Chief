@@ -57,12 +57,15 @@ jobs:
         env:
           PYTHONUNBUFFERED: "1"
         run: |
+          # Гарантируем правильный requirements.txt
+          printf "flet\ncertifi\n" > requirements.txt
+          cat requirements.txt
+
           rm -rf build
           flet build apk \
             --project "AI Chef Pro" \
             --org com.aichef \
             --build-version ${{ github.run_number }} \
-            --include-packages flet certifi \
             --verbose
             
       - name: Upload APK
