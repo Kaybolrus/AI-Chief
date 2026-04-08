@@ -108,7 +108,7 @@ def build_recipe_card(recipe, engine, page, on_save=None, on_share=None, is_save
             bgcolor="#1c1005",
             border=ft.border.all(1, "#92400e"),
             border_radius=11,
-            alignment=ft.alignment.center,
+            alignment=ft.Alignment(0, 0),
         )
         if step.timer_sec:
             timer_btn = build_timer_button(i, step.timer_sec, engine, page)
