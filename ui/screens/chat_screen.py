@@ -106,7 +106,6 @@ class ChatScreen(ft.Column):
                         top_left=16, top_right=16, bottom_left=16, bottom_right=4
                     ),
                     padding=ft.padding.symmetric(horizontal=12, vertical=9),
-                    max_width=240,
                 ),
             ], spacing=8)
         )
@@ -133,7 +132,6 @@ class ChatScreen(ft.Column):
                         top_left=4, top_right=16, bottom_left=16, bottom_right=16
                     ),
                     padding=ft.padding.symmetric(horizontal=12, vertical=9),
-                    max_width=260,
                 ),
             ], spacing=8, vertical_alignment=ft.CrossAxisAlignment.END)
         )
