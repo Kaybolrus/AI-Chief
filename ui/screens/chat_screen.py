@@ -8,13 +8,12 @@ from config import QUICK_SUGGESTIONS, RECIPE_EDIT_CHIPS
 
 
 class ChatScreen(ft.Column):
-    def __init__(self, controller: ChatController, engine: TimerEngine, page: ft.Page):
+    def __init__(self, controller: ChatController, engine: TimerEngine, pg):
         super().__init__(expand=True, spacing=0)
         self.ctrl = controller
         self.engine = engine
-        self.page = page
+        self._pg = pg
 
-        # UI элементы
         self._messages = ft.Column(
             scroll=ft.ScrollMode.AUTO,
             expand=True,
@@ -36,14 +35,12 @@ class ChatScreen(ft.Column):
         )
         self._typing_indicator = None
 
-        # Подключаем колбэки
         self.ctrl.on_message(self._handle_message)
         self.ctrl.on_recipe(self._handle_recipe)
         self.ctrl.on_error(self._handle_error)
 
         self._build_ui()
 
-        # Показываем приветствие
         if not self.ctrl.current_recipe:
             self._show_welcome()
 
@@ -65,7 +62,6 @@ class ChatScreen(ft.Column):
             bgcolor="#141414",
             border=ft.border.only(top=ft.BorderSide(0.5, "#2a2624")),
         )
-
         self.controls = [
             ft.Container(content=self._messages, expand=True, padding=ft.padding.all(10)),
             input_row,
@@ -93,8 +89,10 @@ class ChatScreen(ft.Column):
             padding=ft.padding.only(left=40, bottom=4),
         )
         self._messages.controls.append(chips)
-        if self.page:
-            self.page.update()
+        try:
+            self._pg.update()
+        except Exception:
+            pass
 
     def _add_user_bubble(self, text: str):
         self._messages.controls.append(
@@ -112,7 +110,10 @@ class ChatScreen(ft.Column):
                 ),
             ], spacing=8)
         )
-        self.page.update()
+        try:
+            self._pg.update()
+        except Exception:
+            pass
 
     def _add_ai_bubble(self, text: str):
         self._messages.controls.append(
@@ -136,7 +137,10 @@ class ChatScreen(ft.Column):
                 ),
             ], spacing=8, vertical_alignment=ft.CrossAxisAlignment.END)
         )
-        self.page.update()
+        try:
+            self._pg.update()
+        except Exception:
+            pass
 
     def _add_typing_indicator(self):
         dots = ft.Row(
@@ -160,7 +164,10 @@ class ChatScreen(ft.Column):
             ),
         ], spacing=8)
         self._messages.controls.append(self._typing_indicator)
-        self.page.update()
+        try:
+            self._pg.update()
+        except Exception:
+            pass
 
     def _remove_typing_indicator(self):
         if self._typing_indicator and self._typing_indicator in self._messages.controls:
@@ -181,20 +188,22 @@ class ChatScreen(ft.Column):
                 e.control.text = "✓ Сохранено"
                 e.control.bgcolor = "#052e16"
                 e.control.color = "#4ade80"
-                self.page.update()
+                try:
+                    self._pg.update()
+                except Exception:
+                    pass
 
         def on_share(e):
             share_text = get_share_text(recipe)
-            self.page.set_clipboard(share_text)
+            self._pg.set_clipboard(share_text)
             self._add_ai_bubble("Рецепт скопирован! Вставь в Telegram или WhatsApp 📤")
 
         card = build_recipe_card(
-            recipe, self.engine, self.page,
+            recipe, self.engine, self._pg,
             on_save=on_save, on_share=on_share, is_saved=is_saved
         )
         self._messages.controls.append(card)
 
-        # Чипсы для редактирования рецепта
         edit_chips = ft.Container(
             content=ft.Row(
                 [
@@ -215,7 +224,10 @@ class ChatScreen(ft.Column):
             padding=ft.padding.only(left=42, top=4),
         )
         self._messages.controls.append(edit_chips)
-        self.page.update()
+        try:
+            self._pg.update()
+        except Exception:
+            pass
 
     def _handle_error(self, error: str):
         self._remove_typing_indicator()
@@ -226,11 +238,14 @@ class ChatScreen(ft.Column):
         if not text:
             return
         self._input.value = ""
-        self.page.update()
+        try:
+            self._pg.update()
+        except Exception:
+            pass
         self._add_user_bubble(text)
         self._add_typing_indicator()
         await self.ctrl.send(text)
 
     def _quick_send(self, text: str):
         self._input.value = text
-        self.page.run_task(self._on_send, None)
+        self._pg.run_task(self._on_send, None)

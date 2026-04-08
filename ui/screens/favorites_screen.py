@@ -9,12 +9,12 @@ import os, tempfile
 
 
 class FavoritesScreen(ft.Column):
-    def __init__(self, db: Database, ctrl: ChatController, engine: TimerEngine, page: ft.Page):
+    def __init__(self, db: Database, ctrl: ChatController, engine: TimerEngine, pg):
         super().__init__(expand=True, spacing=0)
         self.db = db
         self.ctrl = ctrl
         self.engine = engine
-        self.page = page
+        self._pg = pg
         self._list = ft.Column(scroll=ft.ScrollMode.AUTO, expand=True, spacing=8)
         self._build_ui()
 
@@ -60,8 +60,10 @@ class FavoritesScreen(ft.Column):
         else:
             for fav in favs:
                 self._add_fav_item(fav)
-        if self.page:
-            self.page.update()
+        try:
+            self._pg.update()
+        except Exception:
+            pass
 
     def _add_fav_item(self, fav: Favorite):
         recipe = fav.recipe
@@ -72,31 +74,29 @@ class FavoritesScreen(ft.Column):
 
         def on_share(e):
             from data.export_import import get_share_text
-            self.page.set_clipboard(get_share_text(recipe))
+            self._pg.set_clipboard(get_share_text(recipe))
 
         card = build_recipe_card(
-            recipe, self.engine, self.page,
+            recipe, self.engine, self._pg,
             on_save=on_remove,
             on_share=on_share,
             is_saved=True,
         )
-        # Перезаписываем кнопку сохранить → удалить
         self._list.controls.append(card)
 
     def _export(self, e):
         try:
             tmp = os.path.join(tempfile.gettempdir(), "ai_chef_export.json")
             export_to_file(self.db, tmp)
-            self.page.set_clipboard(f"Экспорт сохранён: {tmp}")
+            self._pg.set_clipboard(f"Экспорт сохранён: {tmp}")
             self._snack("✅ Экспорт готов! Путь скопирован.")
         except Exception as ex:
             self._snack(f"Ошибка экспорта: {ex}")
 
     def _import(self, e):
-        # Для Android: через file picker
         fp = ft.FilePicker(on_result=self._on_file_picked)
-        self.page.overlay.append(fp)
-        self.page.update()
+        self._pg.overlay.append(fp)
+        self._pg.update()
         fp.pick_files(allowed_extensions=["json", "chef"])
 
     def _on_file_picked(self, e):
@@ -111,9 +111,9 @@ class FavoritesScreen(ft.Column):
             self._snack(f"Ошибка импорта: {ex}")
 
     def _snack(self, msg: str):
-        self.page.snack_bar = ft.SnackBar(
+        self._pg.snack_bar = ft.SnackBar(
             content=ft.Text(msg, color="#f5f0e8"),
             bgcolor="#1c1c1c",
         )
-        self.page.snack_bar.open = True
-        self.page.update()
+        self._pg.snack_bar.open = True
+        self._pg.update()
