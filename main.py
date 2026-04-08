@@ -53,7 +53,7 @@ def main(page: ft.Page):
                         width=38, height=38,
                         bgcolor="#2a1505",
                         border_radius=19,
-                        alignment=ft.alignment.center,
+                        alignment=ft.Alignment(0, 0),
                     ),
                     ft.Text(
                         "AI Chef Pro",
@@ -68,7 +68,7 @@ def main(page: ft.Page):
                     bgcolor="#1a1a1a",
                     border=ft.border.all(0.5, "#2a2624"),
                     border_radius=18,
-                    alignment=ft.alignment.center,
+                    alignment=ft.Alignment(0, 0),
                     on_click=new_recipe,
                     ink=True,
                     tooltip="Новый рецепт",
