@@ -139,8 +139,7 @@ def main(page: ft.Page):
                     border_radius=8,
                     padding=10,
                 ),
-            ], scroll=ft.ScrollMode.AUTO, expand=True,
-               spacing=10)
+            ], scroll=ft.ScrollMode.AUTO, expand=True, spacing=10)
         )
         page.update()
 
