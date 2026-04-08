@@ -53,7 +53,7 @@ class ChatScreen(ft.Column):
                     width=42, height=42,
                     bgcolor="#D97706",
                     border_radius=21,
-                    alignment=ft.alignment.center,
+                    alignment=ft.Alignment(0, 0),
                     on_click=self._on_send,
                     ink=True,
                 ),
@@ -123,7 +123,7 @@ class ChatScreen(ft.Column):
                     width=34, height=34,
                     bgcolor="#2a1505",
                     border_radius=17,
-                    alignment=ft.alignment.center,
+                    alignment=ft.Alignment(0, 0),
                 ),
                 ft.Container(
                     content=ft.Text(text, size=13, color="#f5f0e8"),
@@ -153,7 +153,7 @@ class ChatScreen(ft.Column):
                 width=34, height=34,
                 bgcolor="#2a1505",
                 border_radius=17,
-                alignment=ft.alignment.center,
+                alignment=ft.Alignment(0, 0),
             ),
             ft.Container(
                 content=dots,

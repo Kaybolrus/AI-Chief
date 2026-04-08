@@ -52,7 +52,7 @@ class FavoritesScreen(ft.Column):
                         ft.Text("Нет сохранённых рецептов", color="#5a5450", size=14),
                         ft.Text("Сохраняй рецепты из чата", color="#3a3432", size=12),
                     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=8),
-                    alignment=ft.alignment.center,
+                    alignment=ft.Alignment(0, 0),
                     expand=True,
                     padding=ft.padding.only(top=80),
                 )
