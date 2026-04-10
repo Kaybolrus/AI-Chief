@@ -1,7 +1,7 @@
 import os
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "YOUR_API_KEY_HERE")
-GEMINI_MODEL   = "gemini-2.0-flash"
+GEMINI_MODEL   = "gemini-2.0-flash-lite"
 APP_VERSION    = 1.0
 APP_ID         = "ai_chef_pro"
 DB_NAME        = "chef.db"
