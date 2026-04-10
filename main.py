@@ -95,12 +95,12 @@ def main(page: ft.Page):
             indicator_color="#2a1505",
             destinations=[
                 ft.NavigationBarDestination(
-                    icon="chat_bubble_outlined",
+                    icon="chat_bubble_outline",
                     selected_icon="chat_bubble",
                     label="Чат",
                 ),
                 ft.NavigationBarDestination(
-                    icon="star_border_outlined",
+                    icon="star_outline",
                     selected_icon="star",
                     label="Избранное",
                 ),
