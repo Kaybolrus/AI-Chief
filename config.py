@@ -2,7 +2,7 @@ import os
 
 # API Настройки
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "YOUR_API_KEY_HERE")
-GEMINI_MODEL   = "gemini-2.0-flash-lite"
+GEMINI_MODEL   = "gemini-1.5-flash"
 
 # База данных и ID
 APP_VERSION    = 1.0
