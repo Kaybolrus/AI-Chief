@@ -6,15 +6,14 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,json
 version = 1.0
 
-requirements = python3,kivy,flet,google-generativeai,sqlite3
+requirements = python3,flet,certifi
 
 orientation = portrait
 fullscreen = 0
 
 android.permissions = INTERNET, VIBRATE, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE
-android.api = 33
+android.api = 35
 android.minapi = 21
-android.ndk = 25.2.9519653
 android.accept_sdk_license = True
 
 [buildozer]
