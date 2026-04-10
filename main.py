@@ -93,18 +93,18 @@ def main(page: ft.Page):
         nav = ft.NavigationBar(
             bgcolor="#141414",
             indicator_color="#2a1505",
-            destinations=[
-                ft.NavigationBarDestination(
-                    icon="chat_bubble_outline",
-                    selected_icon="chat_bubble",
-                    label="Чат",
-                ),
-                ft.NavigationBarDestination(
-                    icon="star_outline",
-                    selected_icon="star",
-                    label="Избранное",
-                ),
-            ],
+        destinations=[
+            ft.NavigationBarDestination(
+                icon="chat_bubble_outline",
+                selected_icon="chat_bubble",
+                label="Чат",
+            ),
+            ft.NavigationBarDestination(
+                icon="star_outline",
+                selected_icon="star",
+                label="Избранное",
+            ),
+        ],
             on_change=on_nav,
         )
 
