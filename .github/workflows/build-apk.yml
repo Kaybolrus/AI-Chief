@@ -43,12 +43,13 @@ jobs:
           pip install flet --upgrade
           echo "Flet version: $(flet --version)"
 
-      - name: Inject Gemini API key
+      - name: Inject Groq API key
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
-          sed -i "s|YOUR_API_KEY_HERE|${GEMINI_API_KEY}|g" config.py || true
-          echo "Injected: ${#GEMINI_API_KEY} chars"
+          # Заменяем заглушку YOUR_GROQ_API_KEY_HERE на реальный ключ Groq
+          sed -i "s|YOUR_GROQ_API_KEY_HERE|${GROQ_API_KEY}|g" config.py || true
+          echo "Injected: ${#GROQ_API_KEY} chars"
 
       - name: Remove Gradle init scripts
         run: rm -f $HOME/.gradle/init.d/*.gradle || true
