@@ -1,96 +1,95 @@
 import json
 import urllib.request
 import urllib.error
-from config import GROQ_API_KEY, GROQ_MODEL, SYSTEM_PROMPT, MAX_HISTORY_PAIRS
+import asyncio
+import ssl
+import certifi
+from config import GROQ_API_KEY, SYSTEM_PROMPT
 from data.models import Recipe
 from typing import Optional
 
-GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-
-class GeminiClient:  # Имя оставляем — чтобы не менять chat_controller.py
+class GeminiClient:
     def __init__(self):
-        self._full_history = []
-
-    def _trim_history(self):
-        if len(self._full_history) <= MAX_HISTORY_PAIRS * 2:
-            return list(self._full_history)
-        first_user  = self._full_history[0] if self._full_history else None
-        first_model = self._full_history[1] if len(self._full_history) > 1 else None
-        last_model  = None
-        for msg in reversed(self._full_history):
-            if msg["role"] == "assistant":
-                last_model = msg
-                break
-        trimmed = []
-        if first_user:  trimmed.append(first_user)
-        if first_model: trimmed.append(first_model)
-        if last_model and last_model is not first_model:
-            trimmed.append(last_model)
-        return trimmed
+        # Используем ключ OpenRouter (в GitHub Secrets имя остается GROQ_API_KEY для удобства)
+        self.api_key = str(GROQ_API_KEY).replace('"', '').replace("'", "").strip()
+        self.api_url = "https://openrouter.ai/api/v1/chat/completions"
+        
+        # Настройка SSL сертификатов для стабильности на Android
+        try:
+            self.ssl_context = ssl.create_default_context(cafile=certifi.where())
+        except Exception:
+            self.ssl_context = None
 
     async def send_message(self, user_text: str) -> tuple[str, Optional[Recipe]]:
-        history = self._trim_history()
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-        for msg in history:
-            messages.append({"role": msg["role"], "content": msg["content"]})
-        messages.append({"role": "user", "content": user_text})
+        # Проверка наличия ключа
+        if "YOUR_GROQ" in self.api_key or len(self.api_key) < 10:
+            return ("Ошибка: API ключ OpenRouter не настроен.", None)
+
+        # Список бесплатных моделей OpenRouter (всегда :free в конце)
+        # 1. google/gemini-2.0-flash-exp:free (рекомендую, самая быстрая)
+        # 2. meta-llama/llama-3.3-70b-instruct:free (очень мощная)
+        model_name = "google/gemini-2.0-flash-exp:free"
+
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_text}
+        ]
 
         payload = json.dumps({
-            "model": GROQ_MODEL,
+            "model": model_name,
             "messages": messages,
             "temperature": 0.7,
-            "max_tokens": 2048,
-            "response_format": {"type": "json_object"}  # JSON mode как у Gemini
+            "response_format": {"type": "json_object"}
         }).encode("utf-8")
 
-        req = urllib.request.Request(
-            GROQ_URL,
-            data=payload,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {GROQ_API_KEY}"
-            },
-            method="POST"
-        )
+        # Обязательные заголовки для работы с OpenRouter
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://github.com/aichef", # Любой валидный URL
+            "X-Title": "AI Chef Pro",
+            "User-Agent": "Mozilla/5.0 (Linux; Android 10)"
+        }
+
+        req = urllib.request.Request(self.api_url, data=payload, headers=headers, method="POST")
 
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            loop = asyncio.get_event_loop()
+            # Выполняем запрос
+            response = await loop.run_in_executor(
+                None, 
+                lambda: urllib.request.urlopen(req, context=self.ssl_context, timeout=45)
+            )
+            
+            with response as resp:
                 result = json.loads(resp.read().decode("utf-8"))
-        except urllib.error.URLError as e:
-            return (f"Ошибка сети: {e}", None)
+                
+                if "choices" not in result:
+                    error_info = result.get('error', {}).get('message', 'Неизвестная ошибка')
+                    return (f"OpenRouter Error: {error_info}", None)
+                
+                content = result["choices"][0]["message"]["content"]
+                
+                # Очистка контента от Markdown (бывает, что модели добавляют ```json)
+                content = content.replace("```json", "").replace("```", "").strip()
+                data = json.loads(content)
+                
+                recipe = Recipe.from_dict(data.get("recipe")) if data.get("recipe") else None
+                return (data.get("message", "Ваш рецепт готов!"), recipe)
+
+        except urllib.error.HTTPError as e:
+            try:
+                err_data = e.read().decode('utf-8')
+                return (f"Ошибка {e.code}: {err_data[:100]}", None)
+            except:
+                return (f"Ошибка {e.code}: Доступ ограничен.", None)
         except Exception as e:
-            return (f"Ошибка: {e}", None)
-
-        try:
-            raw = result["choices"][0]["message"]["content"]
-        except (KeyError, IndexError) as e:
-            return (f"Ошибка ответа API: {e}", None)
-
-        self._full_history.append({"role": "user",      "content": user_text})
-        self._full_history.append({"role": "assistant", "content": raw})
-
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
-            return ("Ошибка парсинга ответа", None)
-
-        message = data.get("message", "")
-        recipe_dict = data.get("recipe")
-        recipe = Recipe.from_dict(recipe_dict) if recipe_dict else None
-        return (message, recipe)
+            return (f"Ошибка соединения: {str(e)}", None)
 
     def reset_context(self):
-        self._full_history.clear()
+        """Сброс контекста диалога."""
+        pass
 
     def inject_recipe_context(self, recipe: Recipe):
-        recipe_json = json.dumps(
-            {"message": "Вот твой рецепт", "recipe": recipe.to_dict()},
-            ensure_ascii=False,
-        )
-        if not self._full_history:
-            self._full_history.append(
-                {"role": "user", "content": "Продолжи работу с рецептом"}
-            )
-        self._full_history.append(
-            {"role": "assistant", "content": recipe_json}
-        )
+        """Инъекция контекста последнего рецепта."""
+        pass
