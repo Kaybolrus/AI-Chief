@@ -29,10 +29,10 @@ class GeminiClient:
 
         # Список бесплатных моделей для отказоустойчивости
         models_to_try = [
-            "google/gemini-2.0-flash-exp:free",
-            "meta-llama/llama-3.3-70b-instruct:free",
-            "mistralai/mistral-7b-instruct:free",
-            "google/gemini-flash-1.5-8b-exp:free"
+            "google/gemini-2.0-flash-exp",
+            "meta-llama/llama-3.3-70b-instruct",
+            "mistralai/mistral-7b-instruct",
+            "google/gemini-flash-1.5-8b-exp"
         ]
 
         last_error = ""
