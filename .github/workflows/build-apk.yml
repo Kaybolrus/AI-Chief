@@ -58,6 +58,18 @@ jobs:
           print(f"Injected: {len(key)} chars")
           EOF
           grep "GROQ_API_KEY" config.py | head -1
+          # Показать первые 10 символов реального ключа в файле
+          python3 -c "
+          import re
+          with open('config.py') as f:
+              content = f.read()
+          m = re.search(r'GROQ_API_KEY\s*=\s*os\.getenv\(\"GROQ_API_KEY\",\s*\"([^\"]+)\"\)', content)
+          if m:
+              val = m.group(1)
+              print(f'Key in file: {val[:10]}... ({len(val)} chars)')
+          else:
+              print('Pattern not found!')
+          "
                 
       - name: Remove Gradle init scripts
         run: rm -f $HOME/.gradle/init.d/*.gradle || true
