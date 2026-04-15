@@ -1,8 +1,8 @@
 import os
 
 # API Настройки
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "YOUR_API_KEY_HERE")
-GEMINI_MODEL   = "gemini-2.0-flash-lite"
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "YOUR_GROQ_KEY_HERE")
+GROQ_MODEL = "llama-3.3-70b-versatile"
 
 # База данных и ID
 APP_VERSION    = 1.0
