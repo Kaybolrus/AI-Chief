@@ -1,18 +1,13 @@
 import json
 import urllib.request
 import urllib.error
-from config import GEMINI_API_KEY, GEMINI_MODEL, SYSTEM_PROMPT, MAX_HISTORY_PAIRS
+from config import GROQ_API_KEY, GROQ_MODEL, SYSTEM_PROMPT, MAX_HISTORY_PAIRS
 from data.models import Recipe
 from typing import Optional
 
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-GEMINI_URL = (
-    f"https://generativelanguage.googleapis.com/v1beta/models/"
-    f"{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
-)
-
-
-class GeminiClient:
+class GeminiClient:  # Имя оставляем — чтобы не менять chat_controller.py
     def __init__(self):
         self._full_history = []
 
@@ -23,7 +18,7 @@ class GeminiClient:
         first_model = self._full_history[1] if len(self._full_history) > 1 else None
         last_model  = None
         for msg in reversed(self._full_history):
-            if msg["role"] == "model":
+            if msg["role"] == "assistant":
                 last_model = msg
                 break
         trimmed = []
@@ -35,33 +30,26 @@ class GeminiClient:
 
     async def send_message(self, user_text: str) -> tuple[str, Optional[Recipe]]:
         history = self._trim_history()
-        contents = []
+        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         for msg in history:
-            contents.append({
-                "role": msg["role"],
-                "parts": [{"text": p} for p in msg["parts"]]
-            })
-        contents.append({
-            "role": "user",
-            "parts": [{"text": user_text}]
-        })
+            messages.append({"role": msg["role"], "content": msg["content"]})
+        messages.append({"role": "user", "content": user_text})
 
         payload = json.dumps({
-            "system_instruction": {
-                "parts": [{"text": SYSTEM_PROMPT}]
-            },
-            "contents": contents,
-            "generationConfig": {
-                "response_mime_type": "application/json",
-                "temperature": 0.7,
-                "maxOutputTokens": 2048
-            }
+            "model": GROQ_MODEL,
+            "messages": messages,
+            "temperature": 0.7,
+            "max_tokens": 2048,
+            "response_format": {"type": "json_object"}  # JSON mode как у Gemini
         }).encode("utf-8")
 
         req = urllib.request.Request(
-            GEMINI_URL,
+            GROQ_URL,
             data=payload,
-            headers={"Content-Type": "application/json"},
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {GROQ_API_KEY}"
+            },
             method="POST"
         )
 
@@ -74,12 +62,12 @@ class GeminiClient:
             return (f"Ошибка: {e}", None)
 
         try:
-            raw = result["candidates"][0]["content"]["parts"][0]["text"]
+            raw = result["choices"][0]["message"]["content"]
         except (KeyError, IndexError) as e:
             return (f"Ошибка ответа API: {e}", None)
 
-        self._full_history.append({"role": "user",  "parts": [user_text]})
-        self._full_history.append({"role": "model", "parts": [raw]})
+        self._full_history.append({"role": "user",      "content": user_text})
+        self._full_history.append({"role": "assistant", "content": raw})
 
         try:
             data = json.loads(raw)
@@ -101,8 +89,8 @@ class GeminiClient:
         )
         if not self._full_history:
             self._full_history.append(
-                {"role": "user", "parts": ["Продолжи работу с рецептом"]}
+                {"role": "user", "content": "Продолжи работу с рецептом"}
             )
         self._full_history.append(
-            {"role": "model", "parts": [recipe_json]}
+            {"role": "assistant", "content": recipe_json}
         )
