@@ -47,10 +47,17 @@ jobs:
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
-          # Заменяем заглушку YOUR_GROQ_API_KEY_HERE на реальный ключ Groq
-          sed -i "s|YOUR_GROQ_API_KEY_HERE|${GROQ_API_KEY}|g" config.py || true
-          echo "Injected: ${#GROQ_API_KEY} chars"
-
+          python3 - <<'EOF'
+          import os, re
+          key = os.environ["GROQ_API_KEY"]
+          with open("config.py", "r") as f:
+              content = f.read()
+          content = content.replace("YOUR_GROQ_KEY_HERE", key)
+          with open("config.py", "w") as f:
+              f.write(content)
+          print(f"Injected: {len(key)} chars")
+          EOF
+          
       - name: Remove Gradle init scripts
         run: rm -f $HOME/.gradle/init.d/*.gradle || true
 
