@@ -162,20 +162,27 @@ def build_recipe_card(recipe, engine, page, on_save=None, on_share=None, is_save
             padding=ft.padding.symmetric(horizontal=14, vertical=8)
         ))
 
-    save_btn = ft.ElevatedButton(
-        text="✓ Сохранено" if is_saved else "💾 Сохранить",
+    save_btn = ft.Container(
+        content=ft.Text("✓ Сохранено" if is_saved else "💾 Сохранить",
+                        size=13, color="#4ade80" if is_saved else "#a8a09a",
+                        text_align=ft.TextAlign.CENTER),
         bgcolor="#052e16" if is_saved else "#1a1a1a",
-        color="#4ade80" if is_saved else "#a8a09a",
+        border=ft.border.all(0.5, "#2a2624"),
+        border_radius=10,
+        padding=ft.padding.symmetric(horizontal=12, vertical=10),
         on_click=on_save,
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+        ink=True,
         expand=True,
     )
-    share_btn = ft.ElevatedButton(
-        text="📤 Поделиться",
+    share_btn = ft.Container(
+        content=ft.Text("📤 Поделиться", size=13, color="#a8a09a",
+                        text_align=ft.TextAlign.CENTER),
         bgcolor="#1a1a1a",
-        color="#a8a09a",
+        border=ft.border.all(0.5, "#2a2624"),
+        border_radius=10,
+        padding=ft.padding.symmetric(horizontal=12, vertical=10),
         on_click=on_share,
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+        ink=True,
         expand=True,
     )
     sections.append(ft.Container(
