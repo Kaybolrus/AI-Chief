@@ -11,6 +11,7 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.DARK
     page.bgcolor = "#0c0c0c"
     page.padding = 0
+    page.window_status_bar_color = "#141414"
 
     try:
         page.theme = ft.Theme(
@@ -75,7 +76,11 @@ def main(page: ft.Page):
                 ),
             ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
             bgcolor="#141414",
-            padding=ft.padding.symmetric(horizontal=16, vertical=10),
+            padding=ft.padding.only(
+                left=16, right=16,
+                top=44,   # отступ под системную строку
+                bottom=10,
+            ),
             border=ft.border.only(bottom=ft.BorderSide(0.5, "#2a2624")),
         )
 
@@ -93,18 +98,18 @@ def main(page: ft.Page):
         nav = ft.NavigationBar(
             bgcolor="#141414",
             indicator_color="#2a1505",
-        destinations=[
-            ft.NavigationBarDestination(
-                icon="chat_bubble_outline",
-                selected_icon="chat_bubble",
-                label="Чат",
-            ),
-            ft.NavigationBarDestination(
-                icon="star_outline",
-                selected_icon="star",
-                label="Избранное",
-            ),
-        ],
+            destinations=[
+                ft.NavigationBarDestination(
+                    icon="chat_bubble_outline",
+                    selected_icon="chat_bubble",
+                    label="Чат",
+                ),
+                ft.NavigationBarDestination(
+                    icon="star_outline",
+                    selected_icon="star",
+                    label="Избранное",
+                ),
+            ],
             on_change=on_nav,
         )
 
