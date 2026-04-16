@@ -113,11 +113,11 @@ def build_recipe_card(recipe, engine, page, on_save=None, on_share=None, is_save
         if step.timer_sec:
             timer_btn = build_timer_button(i, step.timer_sec, engine, page)
             content = ft.Column([
-                ft.Text(step.text, size=12, color="#a8a09a"),
+                ft.Text(step.text, size=12, color="#a8a09a", no_wrap=False),
                 ft.Row([timer_btn]),
             ], spacing=4, expand=True)
         else:
-            content = ft.Text(step.text, size=12, color="#a8a09a", expand=True)
+            content = ft.Text(step.text, size=12, color="#a8a09a", no_wrap=False, expand=True)
 
         steps_col.controls.append(
             ft.Row([num, content], spacing=8,
@@ -128,7 +128,7 @@ def build_recipe_card(recipe, engine, page, on_save=None, on_share=None, is_save
         ft.Container(
             content=ft.Column([
                 ft.Text(recipe.title, size=16,
-                        weight=ft.FontWeight.W_700, color="#f5f0e8"),
+                        weight=ft.FontWeight.W_700, color="#f5f0e8", no_wrap=False),
                 meta,
             ], spacing=6),
             padding=ft.padding.all(14),
