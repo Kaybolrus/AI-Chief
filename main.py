@@ -10,7 +10,6 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.DARK
     page.bgcolor = "#0c0c0c"
     page.padding = 0
-    # Настройка статус-бара для мобильных устройств
     page.window_status_bar_color = "#141414"
 
     try:
@@ -38,22 +37,20 @@ def main(page: ft.Page):
         chat_screen = ChatScreen(controller, engine, page)
         fav_screen = FavoritesScreen(db, controller, engine, page)
 
-        # Контейнер для смены экранов
         content_area = ft.Container(content=chat_screen, expand=True)
 
         def new_recipe(e):
             controller.start_new_recipe()
             if hasattr(chat_screen, '_messages'):
                 chat_screen._messages.controls.clear()
-            # Если есть метод приветствия, вызываем его
-            if hasattr(chat_screen, '_show_welcome'):
-                chat_screen._show_welcome()
+            
+            from config import QUICK_SUGGESTIONS
+            chat_screen._load_suggestions(QUICK_SUGGESTIONS)
             
             page.navigation_bar.selected_index = 0
             content_area.content = chat_screen
             page.update()
 
-        # Верхняя панель (Header)
         header = ft.Container(
             content=ft.Row([
                 ft.Row([
@@ -62,7 +59,8 @@ def main(page: ft.Page):
                         width=38, height=38,
                         bgcolor="#2a1505",
                         border_radius=19,
-                        alignment=ft.alignment.center,
+                        # ВОЗВРАЩАЕМ СТАБИЛЬНЫЙ СИНТАКСИС
+                        alignment=ft.alignment.Alignment(0, 0), 
                     ),
                     ft.Text(
                         "AI Chef Pro",
@@ -77,7 +75,8 @@ def main(page: ft.Page):
                     bgcolor="#1a1a1a",
                     border=ft.border.all(0.5, "#2a2624"),
                     border_radius=18,
-                    alignment=ft.alignment.center,
+                    # ВОЗВРАЩАЕМ СТАБИЛЬНЫЙ СИНТАКСИС
+                    alignment=ft.alignment.Alignment(0, 0),
                     on_click=new_recipe,
                     ink=True,
                 ),
@@ -87,17 +86,15 @@ def main(page: ft.Page):
             border=ft.border.only(bottom=ft.BorderSide(0.5, "#2a2624")),
         )
 
-        # Функция переключения вкладок
         def on_nav_change(e):
-            idx = e.control.selected_index
+            idx = int(e.control.selected_index)
             if idx == 0:
                 content_area.content = chat_screen
             elif idx == 1:
-                fav_screen.refresh()
+                fav_screen.update_list()
                 content_area.content = fav_screen
             page.update()
 
-        # Устанавливаем NavigationBar напрямую в page
         page.navigation_bar = ft.NavigationBar(
             bgcolor="#141414",
             indicator_color="#2a1505",
@@ -117,7 +114,6 @@ def main(page: ft.Page):
             on_change=on_nav_change,
         )
 
-        # Добавляем только хедер и контент (навбар прилипнет к низу сам)
         page.add(
             ft.Column([
                 header,
@@ -125,10 +121,11 @@ def main(page: ft.Page):
             ], spacing=0, expand=True)
         )
 
-    except Exception as e:
+    except Exception:
         import traceback
         error_text = traceback.format_exc()
-        page.add(ft.Text(f"Ошибка: {error_text}", color="red", size=12))
+        page.add(ft.Text(f"Ошибка: {error_text}", color="red", size=10))
         page.update()
 
-ft.app(target=main)
+if __name__ == "__main__":
+    ft.app(target=main)
