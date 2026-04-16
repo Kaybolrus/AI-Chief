@@ -88,7 +88,7 @@ def build_recipe_card(recipe, engine, page, on_save=None, on_share=None, is_save
 
     ing_chips = ft.Row([
         ft.Container(
-            content=ft.Text(ing, size=11, color="#a8a09a"),
+            content=ft.Text(ing, size=11, color="#a8a09a", no_wrap=False),
             bgcolor="#1a1a1a",
             border=ft.border.all(0.5, "#2a2624"),
             border_radius=8,
@@ -115,13 +115,20 @@ def build_recipe_card(recipe, engine, page, on_save=None, on_share=None, is_save
             content = ft.Column([
                 ft.Text(step.text, size=12, color="#a8a09a", no_wrap=False),
                 ft.Row([timer_btn]),
-            ], spacing=4, expand=True)
+            ], spacing=4, tight=True)
         else:
-            content = ft.Text(step.text, size=12, color="#a8a09a", no_wrap=False, expand=True)
+            content = ft.Text(step.text, size=12, color="#a8a09a", no_wrap=False)
 
+        # Оборачиваем в Container чтобы ограничить ширину текста
         steps_col.controls.append(
-            ft.Row([num, content], spacing=8,
-                   vertical_alignment=ft.CrossAxisAlignment.START)
+            ft.Row(
+                [
+                    ft.Container(content=num, width=22),
+                    ft.Container(content=content, expand=True),
+                ],
+                spacing=8,
+                vertical_alignment=ft.CrossAxisAlignment.START,
+            )
         )
 
     sections = [
@@ -196,6 +203,7 @@ def build_recipe_card(recipe, engine, page, on_save=None, on_share=None, is_save
         border=ft.border.all(0.5, "#2a2624"),
         border_radius=16,
         clip_behavior=ft.ClipBehavior.HARD_EDGE,
+        expand=True,
     )
 
 
