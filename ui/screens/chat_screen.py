@@ -63,7 +63,11 @@ class ChatScreen(ft.Column):
             border=ft.border.only(top=ft.BorderSide(0.5, "#2a2624")),
         )
         self.controls = [
-            ft.Container(content=self._messages, expand=True, padding=ft.padding.all(10)),
+            ft.Container(
+                content=self._messages,
+                expand=True,
+                padding=ft.padding.symmetric(horizontal=12, vertical=10),
+            ),
             input_row,
         ]
 
@@ -99,13 +103,14 @@ class ChatScreen(ft.Column):
             ft.Row([
                 ft.Container(expand=True),
                 ft.Container(
-                    content=ft.Text(text, size=13, color="#e0f0ff"),
+                    content=ft.Text(text, size=13, color="#e0f0ff", no_wrap=False),
                     bgcolor="#1e3a5f",
                     border=ft.border.all(0.5, "#1e4080"),
                     border_radius=ft.border_radius.only(
                         top_left=16, top_right=16, bottom_left=16, bottom_right=4
                     ),
                     padding=ft.padding.symmetric(horizontal=12, vertical=9),
+                    expand=True,
                 ),
             ], spacing=8)
         )
@@ -125,13 +130,14 @@ class ChatScreen(ft.Column):
                     alignment=ft.Alignment(0, 0),
                 ),
                 ft.Container(
-                    content=ft.Text(text, size=13, color="#f5f0e8"),
+                    content=ft.Text(text, size=13, color="#f5f0e8", no_wrap=False),
                     bgcolor="#1c1c1c",
                     border=ft.border.all(0.5, "#2a2624"),
                     border_radius=ft.border_radius.only(
                         top_left=4, top_right=16, bottom_left=16, bottom_right=16
                     ),
                     padding=ft.padding.symmetric(horizontal=12, vertical=9),
+                    expand=True,
                 ),
             ], spacing=8, vertical_alignment=ft.CrossAxisAlignment.END)
         )
