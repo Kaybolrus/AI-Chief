@@ -196,7 +196,7 @@ def _section(label, content):
     return ft.Container(
         content=ft.Column([
             ft.Text(label.upper(), size=10, weight=ft.FontWeight.W_600,
-                    color="#5a5450", letter_spacing=0.5),
+                    color="#5a5450"),
             content,
         ], spacing=8),
         padding=ft.padding.all(14),
