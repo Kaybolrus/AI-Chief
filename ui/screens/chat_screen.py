@@ -200,7 +200,9 @@ class ChatScreen(ft.Column):
             recipe, self.engine, self._pg,
             on_save=on_save, on_share=on_share, is_saved=is_saved
         )
-        self._messages.controls.append(card)
+        self._messages.controls.append(
+            ft.Row([card], expand=True)
+        )
 
         edit_chips = ft.Container(
             content=ft.Row(
