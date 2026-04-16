@@ -37,16 +37,15 @@ def main(page: ft.Page):
         chat_screen = ChatScreen(controller, engine, page)
         fav_screen = FavoritesScreen(db, controller, engine, page)
 
+        # Контейнер для контента
         content_area = ft.Container(content=chat_screen, expand=True)
 
         def new_recipe(e):
             controller.start_new_recipe()
             if hasattr(chat_screen, '_messages'):
                 chat_screen._messages.controls.clear()
-            
             from config import QUICK_SUGGESTIONS
             chat_screen._load_suggestions(QUICK_SUGGESTIONS)
-            
             page.navigation_bar.selected_index = 0
             content_area.content = chat_screen
             page.update()
@@ -56,27 +55,16 @@ def main(page: ft.Page):
                 ft.Row([
                     ft.Container(
                         content=ft.Text("🍳", size=22),
-                        width=38, height=38,
-                        bgcolor="#2a1505",
-                        border_radius=19,
+                        width=38, height=38, bgcolor="#2a1505", border_radius=19,
                         alignment=ft.alignment.Alignment(0, 0), 
                     ),
-                    ft.Text(
-                        "AI Chef Pro",
-                        size=17,
-                        weight=ft.FontWeight.W_700,
-                        color="#f5f0e8",
-                    ),
+                    ft.Text("AI Chef Pro", size=17, weight="bold", color="#f5f0e8"),
                 ], spacing=10),
                 ft.Container(
                     content=ft.Text("➕", size=16),
-                    width=36, height=36,
-                    bgcolor="#1a1a1a",
-                    border=ft.border.all(0.5, "#2a2624"),
-                    border_radius=18,
-                    alignment=ft.alignment.Alignment(0, 0),
-                    on_click=new_recipe,
-                    ink=True,
+                    width=36, height=36, bgcolor="#1a1a1a", border=ft.border.all(0.5, "#2a2624"),
+                    border_radius=18, alignment=ft.alignment.Alignment(0, 0),
+                    on_click=new_recipe, ink=True,
                 ),
             ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
             bgcolor="#141414",
@@ -93,25 +81,20 @@ def main(page: ft.Page):
                 content_area.content = fav_screen
             page.update()
 
+        # NavigationBar
         page.navigation_bar = ft.NavigationBar(
             bgcolor="#141414",
             indicator_color="#2a1505",
             selected_index=0,
             destinations=[
-                ft.NavigationBarDestination(
-                    icon="chat_bubble_outline",  # ВОЗВРАЩЕН СТРОКОВЫЙ ФОРМАТ
-                    selected_icon="chat_bubble", # ВОЗВРАЩЕН СТРОКОВЫЙ ФОРМАТ
-                    label="Чат",
-                ),
-                ft.NavigationBarDestination(
-                    icon="star_outline",         # ВОЗВРАЩЕН СТРОКОВЫЙ ФОРМАТ
-                    selected_icon="star",        # ВОЗВРАЩЕН СТРОКОВЫЙ ФОРМАТ
-                    label="Избранное",
-                ),
+                ft.NavigationBarDestination(icon="chat_bubble_outline", selected_icon="chat_bubble", label="Чат"),
+                ft.NavigationBarDestination(icon="star_outline", selected_icon="star", label="Избранное"),
             ],
             on_change=on_nav_change,
         )
 
+        # Важно: добавляем Header и ContentArea в Column с expand=True
+        # NavigationBar вшит в page.navigation_bar, поэтому он будет в самом низу под колонкой
         page.add(
             ft.Column([
                 header,
