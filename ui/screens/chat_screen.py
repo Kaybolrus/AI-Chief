@@ -183,9 +183,9 @@ class ChatScreen(ft.Column):
         def on_save(e):
             ok = self.ctrl.save_current_to_favorites()
             if ok:
-                e.control.text = "✓ Сохранено"
+                e.control.content.value = "✓ Сохранено"
                 e.control.bgcolor = "#052e16"
-                e.control.color = "#4ade80"
+                e.control.content.color = "#4ade80"
                 try:
                     self._pg.update()
                 except Exception:
