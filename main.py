@@ -59,7 +59,6 @@ def main(page: ft.Page):
                         width=38, height=38,
                         bgcolor="#2a1505",
                         border_radius=19,
-                        # ВОЗВРАЩАЕМ СТАБИЛЬНЫЙ СИНТАКСИС
                         alignment=ft.alignment.Alignment(0, 0), 
                     ),
                     ft.Text(
@@ -75,7 +74,6 @@ def main(page: ft.Page):
                     bgcolor="#1a1a1a",
                     border=ft.border.all(0.5, "#2a2624"),
                     border_radius=18,
-                    # ВОЗВРАЩАЕМ СТАБИЛЬНЫЙ СИНТАКСИС
                     alignment=ft.alignment.Alignment(0, 0),
                     on_click=new_recipe,
                     ink=True,
@@ -101,13 +99,13 @@ def main(page: ft.Page):
             selected_index=0,
             destinations=[
                 ft.NavigationBarDestination(
-                    icon=ft.icons.CHAT_BUBBLE_OUTLINE,
-                    selected_icon=ft.icons.CHAT_BUBBLE,
+                    icon="chat_bubble_outline",  # ВОЗВРАЩЕН СТРОКОВЫЙ ФОРМАТ
+                    selected_icon="chat_bubble", # ВОЗВРАЩЕН СТРОКОВЫЙ ФОРМАТ
                     label="Чат",
                 ),
                 ft.NavigationBarDestination(
-                    icon=ft.icons.STAR_OUTLINE,
-                    selected_icon=ft.icons.STAR,
+                    icon="star_outline",         # ВОЗВРАЩЕН СТРОКОВЫЙ ФОРМАТ
+                    selected_icon="star",        # ВОЗВРАЩЕН СТРОКОВЫЙ ФОРМАТ
                     label="Избранное",
                 ),
             ],
