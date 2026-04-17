@@ -14,12 +14,12 @@ class ChatScreen(ft.Column):
         self._pg = pg
 
         # Основной список сообщений
+        # Исправлено: Убран параметр padding из ft.Column
         self._messages = ft.Column(
             scroll=ft.ScrollMode.AUTO, 
             expand=True, 
             spacing=15, 
-            auto_scroll=True,
-            padding=ft.padding.only(left=15, right=15, top=20, bottom=10)
+            auto_scroll=True
         )
         
         # Ряд с чипсами (подсказками)
@@ -71,7 +71,12 @@ class ChatScreen(ft.Column):
         )
         
         self.controls = [
-            ft.Container(content=self._messages, expand=True), 
+            # Исправлено: Добавлен padding в оборачивающий Container
+            ft.Container(
+                content=self._messages, 
+                expand=True,
+                padding=ft.padding.only(left=15, right=15, top=20, bottom=10)
+            ), 
             bottom_panel
         ]
 
@@ -122,7 +127,7 @@ class ChatScreen(ft.Column):
                 ft.Container(
                     content=ft.Text("👨‍🍳", size=14),
                     width=30, height=30, bgcolor="#2a2624", border_radius=15,
-                    alignment=ft.alignment.Alignment(0, 0), # ИСПРАВЛЕНО ЗДЕСЬ
+                    alignment=ft.alignment.Alignment(0, 0),
                 ),
                 ft.Container(
                     content=ft.Text(value=str(text), size=14, color="#f5f0e8", soft_wrap=True),
