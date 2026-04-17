@@ -14,7 +14,6 @@ class ChatScreen(ft.Column):
         self._pg = pg
 
         # Основной список сообщений
-        # Исправлено: Убран параметр padding из ft.Column
         self._messages = ft.Column(
             scroll=ft.ScrollMode.AUTO, 
             expand=True, 
@@ -23,9 +22,10 @@ class ChatScreen(ft.Column):
         )
         
         # Ряд с чипсами (подсказками)
+        # Исправлено: Режим скролла AUTO надежнее HIDDEN
         self._chips_row = ft.Row(
             wrap=False,
-            scroll=ft.ScrollMode.HIDDEN,
+            scroll=ft.ScrollMode.AUTO,
             spacing=8,
         )
         
@@ -57,7 +57,7 @@ class ChatScreen(ft.Column):
                 ft.Row([
                     self._input,
                     ft.IconButton(
-                        icon="send_rounded", # Строковая иконка для стабильности
+                        icon=ft.icons.SEND, 
                         bgcolor="#D97706", 
                         icon_color="#141414",
                         on_click=self._on_send,
@@ -71,7 +71,6 @@ class ChatScreen(ft.Column):
         )
         
         self.controls = [
-            # Исправлено: Добавлен padding в оборачивающий Container
             ft.Container(
                 content=self._messages, 
                 expand=True,
@@ -97,8 +96,10 @@ class ChatScreen(ft.Column):
                     ink=True,
                 )
             )
-        try: self._pg.update()
-        except: pass
+        try: 
+            self._pg.update()
+        except Exception: 
+            pass
 
     async def _handle_chip_click(self, text):
         self._add_user_bubble(text)
@@ -118,7 +119,10 @@ class ChatScreen(ft.Column):
                 )
             ], alignment=ft.MainAxisAlignment.END)
         )
-        self._pg.update()
+        try:
+            self._pg.update()
+        except Exception:
+            pass
 
     def _add_ai_bubble(self, text: str):
         limit = (self._pg.width or 400) * 0.8
@@ -127,7 +131,8 @@ class ChatScreen(ft.Column):
                 ft.Container(
                     content=ft.Text("👨‍🍳", size=14),
                     width=30, height=30, bgcolor="#2a2624", border_radius=15,
-                    alignment=ft.alignment.Alignment(0, 0),
+                    # Исправлено: использование константы center
+                    alignment=ft.alignment.center,
                 ),
                 ft.Container(
                     content=ft.Text(value=str(text), size=14, color="#f5f0e8", soft_wrap=True),
@@ -137,9 +142,12 @@ class ChatScreen(ft.Column):
                     padding=ft.padding.symmetric(horizontal=16, vertical=12),
                     max_width=limit,
                 ),
-            ], spacing=8, vertical_alignment=ft.CrossAxisAlignment.END)
+            ], spacing=8, vertical_alignment=ft.CrossAxisAlignment.START) # Исправлено: START стабильнее END
         )
-        self._pg.update()
+        try:
+            self._pg.update()
+        except Exception:
+            pass
 
     async def _on_send(self, e):
         val = self._input.value.strip()
@@ -157,4 +165,7 @@ class ChatScreen(ft.Column):
         self._load_suggestions(RECIPE_EDIT_CHIPS)
         card = build_recipe_card(recipe, self.engine, self._pg)
         self._messages.controls.append(ft.Row([card], alignment=ft.MainAxisAlignment.START))
-        self._pg.update()
+        try:
+            self._pg.update()
+        except Exception:
+            pass
