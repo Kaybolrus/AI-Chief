@@ -39,7 +39,7 @@ def build_recipe_card(recipe, engine, page, on_save=None, on_share=None, is_save
         num = ft.Container(
             content=ft.Text(str(i + 1), size=11, weight="bold", color="#fbbf24"),
             width=24, height=24, bgcolor="#2a1505", border=ft.border.all(1, "#92400e"),
-            border_radius=12, alignment=ft.alignment.center,
+            border_radius=12, alignment=ft.alignment.Alignment(0, 0),
         )
         
         step_content = ft.Column([
@@ -52,7 +52,7 @@ def build_recipe_card(recipe, engine, page, on_save=None, on_share=None, is_save
             step_content.controls.append(ft.Row([timer_widget]))
 
         steps_col.controls.append(
-            ft.Row([num, step_content], vertical_alignment=ft.CrossAxisAlignment.START, spacing=12)
+            ft.Row([num, step_content], vertical_alignment="start", spacing=12)
         )
 
     # Сборка карточки
@@ -72,12 +72,12 @@ def build_recipe_card(recipe, engine, page, on_save=None, on_share=None, is_save
                     ft.Container(
                         content=ft.Text("✓ Сохранено" if is_saved else "💾 Сохранить", color="#4ade80" if is_saved else "#a8a09a"),
                         bgcolor="#052e16" if is_saved else "#1a1a1a",
-                        expand=True, border_radius=10, padding=12, on_click=on_save, alignment=ft.alignment.center
+                        expand=True, border_radius=10, padding=12, on_click=on_save, alignment=ft.alignment.Alignment(0, 0)
                     ),
                     ft.Container(
                         content=ft.Text("📤 Поделиться", color="#a8a09a"),
                         bgcolor="#1a1a1a", expand=True, border_radius=10, padding=12,
-                        on_click=on_share, alignment=ft.alignment.center
+                        on_click=on_share, alignment=ft.alignment.Alignment(0, 0)
                     ),
                 ], spacing=10),
                 padding=20
