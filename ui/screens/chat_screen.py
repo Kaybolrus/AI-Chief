@@ -56,13 +56,10 @@ class ChatScreen(ft.Column):
                 ft.Container(content=self._chips_row, padding=ft.padding.only(bottom=5)),
                 ft.Row([
                     self._input,
-                    ft.Container(
-                        content=ft.Text("➤", size=16, color="#141414", weight=ft.FontWeight.W_700),
-                        bgcolor="#D97706",
-                        alignment=ft.alignment.Alignment(0, 0),
-                        border_radius=25,
-                        width=50,
-                        height=50,
+                    ft.IconButton(
+                        icon="send",
+                        bgcolor="#D97706", 
+                        icon_color="#141414",
                         on_click=self._on_send,
                         ink=True,
                     )
