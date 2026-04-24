@@ -15,7 +15,7 @@ class FavoritesScreen(ft.Column):
         self.ctrl = ctrl
         self.engine = engine
         self._pg = pg
-        self._list = ft.Column(scroll=ft.ScrollMode.AUTO, expand=True, spacing=8)
+        self._list = ft.Column(scroll="auto", expand=True, spacing=8)
         self._build_ui()
 
     def _build_ui(self):
@@ -51,7 +51,7 @@ class FavoritesScreen(ft.Column):
                         ft.Text("🍽", size=40, text_align=ft.TextAlign.CENTER),
                         ft.Text("Нет сохранённых рецептов", color="#5a5450", size=14),
                         ft.Text("Сохраняй рецепты из чата", color="#3a3432", size=12),
-                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=8),
+                    ], horizontal_alignment="center", spacing=8),
                     alignment=ft.Alignment(0, 0),
                     expand=True,
                     padding=ft.padding.only(top=80),
@@ -96,7 +96,10 @@ class FavoritesScreen(ft.Column):
     def _import(self, e):
         fp = ft.FilePicker(on_result=self._on_file_picked)
         self._pg.overlay.append(fp)
-        self._pg.update()
+        try:
+            self._pg.update()
+        except Exception:
+            pass
         fp.pick_files(allowed_extensions=["json", "chef"])
 
     def _on_file_picked(self, e):
@@ -116,4 +119,7 @@ class FavoritesScreen(ft.Column):
             bgcolor="#1c1c1c",
         )
         self._pg.snack_bar.open = True
-        self._pg.update()
+        try:
+            self._pg.update()
+        except Exception:
+            pass
