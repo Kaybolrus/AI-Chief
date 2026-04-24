@@ -66,7 +66,7 @@ def main(page: ft.Page):
                     content=ft.Text("➕", size=16),
                     width=36, height=36, bgcolor="#1a1a1a", border=ft.border.all(0.5, "#2a2624"),
                     border_radius=18, alignment=ft.alignment.Alignment(0, 0),
-                    on_click=new_recipe,
+                    on_click=new_recipe, ink=True,
                 ),
             ], alignment="spaceBetween"),
             bgcolor="#141414",
