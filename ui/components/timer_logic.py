@@ -22,7 +22,7 @@ def create_step_timer(step_index, timer_sec, engine, page):
         label.color = "#4ade80" if remaining > 30 else "#f87171"
         try:
             page.update()
-        except:
+        except Exception:
             pass
 
     async def on_done(tid):
@@ -40,9 +40,12 @@ def create_step_timer(step_index, timer_sec, engine, page):
         
         try:
             page.haptic_feedback.heavy_impact()
-        except:
+        except Exception:
             pass
-        page.update()
+        try:
+            page.update()
+        except Exception:
+            pass
 
     def handle_click(e):
         existing = engine.get(timer_id)
@@ -58,7 +61,10 @@ def create_step_timer(step_index, timer_sec, engine, page):
             btn.bgcolor = "#2a1505"
             btn.border = ft.border.all(1, "#fbbf24")
             engine.start_timer(timer_id, timer_sec, on_tick, on_done, page)
-        page.update()
+        try:
+            page.update()
+        except Exception:
+            pass
 
     btn = ft.Container(
         content=label,
@@ -67,7 +73,6 @@ def create_step_timer(step_index, timer_sec, engine, page):
         border_radius=8,
         padding=ft.padding.symmetric(horizontal=12, vertical=6),
         on_click=handle_click,
-        ink=True,
         animate=ft.animation.Animation(300, ft.AnimationCurve.DECELERATE)
     )
     return btn

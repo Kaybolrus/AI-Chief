@@ -15,7 +15,7 @@ class ChatScreen(ft.Column):
 
         # Основной список сообщений
         self._messages = ft.Column(
-            scroll=ft.ScrollMode.AUTO, 
+            scroll="auto",
             expand=True, 
             spacing=15, 
             auto_scroll=True
@@ -25,7 +25,7 @@ class ChatScreen(ft.Column):
         # Исправлено: Режим скролла AUTO надежнее HIDDEN
         self._chips_row = ft.Row(
             wrap=False,
-            scroll=ft.ScrollMode.AUTO,
+            scroll="auto",
             spacing=8,
         )
         
@@ -56,12 +56,14 @@ class ChatScreen(ft.Column):
                 ft.Container(content=self._chips_row, padding=ft.padding.only(bottom=5)),
                 ft.Row([
                     self._input,
-                    ft.IconButton(
-                        icon=ft.icons.SEND, 
-                        bgcolor="#D97706", 
-                        icon_color="#141414",
+                    ft.Container(
+                        content=ft.Text("➤", size=16, color="#141414", weight=ft.FontWeight.W_700),
+                        bgcolor="#D97706",
+                        alignment=ft.alignment.Alignment(0, 0),
+                        border_radius=25,
+                        width=50,
+                        height=50,
                         on_click=self._on_send,
-                        width=50, height=50
                     )
                 ], spacing=10)
             ], tight=True),
@@ -93,7 +95,6 @@ class ChatScreen(ft.Column):
                     border_radius=15,
                     padding=ft.padding.symmetric(horizontal=12, vertical=8),
                     on_click=lambda e, t=text: self._handle_chip_click(t),
-                    ink=True,
                 )
             )
         try: 
@@ -117,7 +118,7 @@ class ChatScreen(ft.Column):
                     padding=ft.padding.symmetric(horizontal=16, vertical=12),
                     max_width=limit,
                 )
-            ], alignment=ft.MainAxisAlignment.END)
+            ], alignment="end")
         )
         try:
             self._pg.update()
@@ -131,8 +132,7 @@ class ChatScreen(ft.Column):
                 ft.Container(
                     content=ft.Text("👨‍🍳", size=14),
                     width=30, height=30, bgcolor="#2a2624", border_radius=15,
-                    # Исправлено: использование константы center
-                    alignment=ft.alignment.center,
+                    alignment=ft.alignment.Alignment(0, 0),
                 ),
                 ft.Container(
                     content=ft.Text(value=str(text), size=14, color="#f5f0e8", soft_wrap=True),
@@ -142,7 +142,7 @@ class ChatScreen(ft.Column):
                     padding=ft.padding.symmetric(horizontal=16, vertical=12),
                     max_width=limit,
                 ),
-            ], spacing=8, vertical_alignment=ft.CrossAxisAlignment.START) # Исправлено: START стабильнее END
+            ], spacing=8, vertical_alignment="start")
         )
         try:
             self._pg.update()
@@ -164,7 +164,7 @@ class ChatScreen(ft.Column):
     def _handle_recipe(self, recipe: Recipe):
         self._load_suggestions(RECIPE_EDIT_CHIPS)
         card = build_recipe_card(recipe, self.engine, self._pg)
-        self._messages.controls.append(ft.Row([card], alignment=ft.MainAxisAlignment.START))
+        self._messages.controls.append(ft.Row([card], alignment="start"))
         try:
             self._pg.update()
         except Exception:
