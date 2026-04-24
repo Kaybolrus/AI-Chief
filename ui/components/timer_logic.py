@@ -73,7 +73,6 @@ def create_step_timer(step_index, timer_sec, engine, page):
         border_radius=8,
         padding=ft.padding.symmetric(horizontal=12, vertical=6),
         on_click=handle_click,
-        ink=True,
         animate=ft.animation.Animation(300, ft.AnimationCurve.DECELERATE)
     )
     return btn

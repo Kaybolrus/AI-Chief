@@ -93,7 +93,6 @@ class ChatScreen(ft.Column):
                     border_radius=15,
                     padding=ft.padding.symmetric(horizontal=12, vertical=8),
                     on_click=lambda e, t=text: self._handle_chip_click(t),
-                    ink=True,
                 )
             )
         try: 
