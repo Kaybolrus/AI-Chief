@@ -61,7 +61,7 @@ class ChatScreen(ft.Column):
                         bgcolor="#D97706", 
                         icon_color="#141414",
                         on_click=self._on_send,
-                        width=50, height=50
+                        ink=True,
                     )
                 ], spacing=10)
             ], tight=True),
